@@ -1,6 +1,13 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL;
 
-export const fetchNews = async (query) => {
-    const res = await fetch(`${API_BASE}/news/search?q=${query}`);
+export async function searchNews(query) {
+    const res = await fetch(
+        `${API}/api/news/search?q=${encodeURIComponent(query)}`
+    );
     return res.json();
-};
+}
+
+export async function getLatestNews() {
+    const res = await fetch(`${API}/api/news/latest`);
+    return res.json();
+}

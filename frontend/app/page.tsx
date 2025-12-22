@@ -1,14 +1,38 @@
 "use client";
-import {  useEffect, useState } from "react";
+
+import { useEffect, useState } from "react";
+import SearchBar from "../components/SearchBar";
+import NewsList from "../components/NewsList";
+import { searchNews, getLatestNews } from "../services/api";
 import socket from "../services/socket";
 
 export default function Home() {
   const [news, setNews] = useState([]);
+  const [query, setQuery] = useState("");
 
+  // Initial load
   useEffect(() => {
-    socket.on("news:new", (data) => {
-      console.log('data', data)
-      setNews((prev) => [data, ...prev] as any);
+    getLatestNews().then((data) => setNews(data.results));
+  }, []);
+
+  // Search handler
+  const handleSearch = async (value: any) => {
+    setQuery(value);
+
+    if (!value) {
+      const data = await getLatestNews();
+      setNews(data.results);
+      return;
+    }
+
+    const data = await searchNews(value);
+    setNews(data.results);
+  };
+
+  // Live updates
+  useEffect(() => {
+    socket.on("news:new", (newNews) => {
+      setNews((prev) => [newNews, ...prev] as any);
     });
 
     return () => {
@@ -17,14 +41,12 @@ export default function Home() {
   }, []);
 
   return (
-    <main>
-      <h1>Live News</h1>
-      {news.map((item: any) => (
-        <div key={item._id}>
-          <h3>{item.title}</h3>
-          <p>{item.source}</p>
-        </div>
-      ))}
+    <main className="container">
+      <h1>📰 AI News Search</h1>
+
+      <SearchBar onSearch={handleSearch} />
+
+      <NewsList news={news} />
     </main>
   );
 }
