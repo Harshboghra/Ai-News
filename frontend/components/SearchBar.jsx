@@ -1,56 +1,47 @@
 import { useState, useEffect } from "react";
+import { newsService } from "../services/news.service";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
-
-export default function SearchBox({ onBlend }) {
+export default function SearchBar({ onBlend }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (query.length < 2) {
         setSuggestions([]);
-        onBlend(""); // 🔥 BLEND TRIGGER CLEAR
         return;
       }
 
-      const res = await fetch(`${API}/api/news/suggest?q=${query}`);
-      const data = await res.json();
-      setSuggestions(data);
+      setLoading(true);
+      try {
+        const data = await newsService.getSuggestions(query, { 
+          limit: 8, 
+          language: 'en' 
+        });
+        setSuggestions(data || []);
+      } catch (error) {
+        console.error('Failed to get suggestions:', error);
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
     }, 300);
 
     return () => clearTimeout(timer);
   }, [query]);
 
   function handleClick(value) {
-    setQuery();
+    setQuery(value);
     setSuggestions([]);
     onBlend(value);
   }
 
   return (
     <div className="search-container">
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          marginBottom: "12px",
-        }}
-      >
-        <span style={{ fontSize: "14px", color: "#6b7280", fontWeight: "500" }}>
-          BLEND MODE
-        </span>
-        <div
-          style={{
-            display: "inline-block",
-            width: "8px",
-            height: "8px",
-            backgroundColor: "#2563eb",
-            borderRadius: "50%",
-            boxShadow: "0 0 8px #2563eb",
-          }}
-        ></div>
+      <div className="blend-mode-container">
+        <span className="blend-mode-label">BLEND MODE</span>
+        <div className="blend-mode-dot"></div>
       </div>
 
       <input
@@ -81,6 +72,15 @@ export default function SearchBox({ onBlend }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {loading && suggestions.length === 0 && (
+        <div className="suggestions-dropdown">
+          <div className="suggestion-item">
+            <span className="suggestion-icon">⏳</span>
+            <span className="suggestion-text">Loading suggestions...</span>
+          </div>
         </div>
       )}
     </div>

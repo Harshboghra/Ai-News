@@ -3,35 +3,69 @@
 import { useEffect, useState } from "react";
 import SearchBar from "../components/SearchBar";
 import NewsList from "../components/NewsList";
-import { searchNews, getLatestNews } from "../services/api";
-import socket from "../services/socket";
+import { newsService } from "../services/news.service";
+import { socketService } from "../services/socket.service";
 import useDebounce from "../hooks/useDebounce";
+import { NewsItem } from "../types";
 
 export default function Home() {
   const [blendQuery, setBlendQuery] = useState("");
-  const [news, setNews] = useState([]);
+  const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const debouncedBlendQuery = useDebounce(blendQuery, 300);
 
+  // Initialize socket connection
+  useEffect(() => {
+    const initializeSocket = async () => {
+      try {
+        await socketService.connect();
+        console.log('Socket connected successfully');
+      } catch (error) {
+        console.error('Failed to connect socket:', error);
+      }
+    };
+
+    initializeSocket();
+  }, []);
+
   // Initial load
   useEffect(() => {
-    getLatestNews().then((data) => setNews(data.results));
+    const loadLatestNews = async () => {
+      try {
+        const response = await newsService.getLatestNews({ limit: 20, language: 'en' });
+        const data = response as any;
+        setNews(data.results || []);
+      } catch (error) {
+        console.error('Failed to load latest news:', error);
+        setNews([]);
+      }
+    };
+
+    loadLatestNews();
   }, []);
 
   // 🔀 Instant blend
   useEffect(() => {
     const runBlend = async () => {
       if (!debouncedBlendQuery) {
-        const data = await getLatestNews();
-        setNews(data.results);
+        const response = await newsService.getLatestNews({ limit: 20, language: 'en' });
+        const data = response as any;
+        setNews(data.results || []);
         return;
       }
 
       setLoading(true);
-      const data = await searchNews(debouncedBlendQuery);
-      setNews(data.results);
-      setLoading(false);
+      try {
+        const response = await newsService.searchNews(debouncedBlendQuery, { limit: 50, language: 'en' });
+        const data = response as any;
+        setNews(data.results || []);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setNews([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     runBlend();
@@ -39,12 +73,14 @@ export default function Home() {
 
   // 🔴 Live updates
   useEffect(() => {
-    socket.on("news:new", (item) => {
-      setNews((prev) => [item, ...prev] as typeof prev);
-    });
+    const handleNewsUpdate = (item: NewsItem) => {
+      setNews((prev) => [item, ...prev]);
+    };
+
+    socketService.onNewsUpdate(handleNewsUpdate);
 
     return () => {
-      socket.off("news:new");
+      socketService.off('news:new', handleNewsUpdate);
     };
   }, []);
 
