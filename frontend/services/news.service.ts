@@ -3,7 +3,7 @@
  * Centralized news-related API methods with proper error handling
  */
 
-import { apiService } from './base';
+import { apiService } from "./base";
 
 class NewsService {
   /**
@@ -14,16 +14,16 @@ class NewsService {
    */
   async searchNews(query: string, options: any = {}) {
     if (!query || query.trim().length === 0) {
-      throw new Error('Search query cannot be empty');
+      throw new Error("Search query cannot be empty");
     }
 
     const params = {
       q: query.trim(),
       limit: options.limit || 20,
-      language: options.language || 'en'
+      language: options.language || "en",
     };
 
-    return apiService.get('/api/news/search', params);
+    return apiService.get("/api/news/search", params);
   }
 
   /**
@@ -34,10 +34,10 @@ class NewsService {
   async getLatestNews(options: any = {}) {
     const params = {
       limit: options.limit || 20,
-      language: options.language || 'en'
+      language: options.language || "en",
     };
 
-    return apiService.get('/api/news/latest', params);
+    return apiService.get("/api/news/latest", params);
   }
 
   /**
@@ -54,10 +54,10 @@ class NewsService {
     const params = {
       q: query.trim(),
       limit: options.limit || 8,
-      language: options.language || 'en'
+      language: options.language || "en",
     };
 
-    return apiService.get('/api/news/suggest', params);
+    return apiService.get("/api/news/suggest", params);
   }
 
   /**
@@ -67,10 +67,10 @@ class NewsService {
    */
   async getTrending(options: any = {}) {
     const params = {
-      limit: options.limit || 8
+      limit: options.limit || 8,
     };
 
-    return apiService.get('/api/news/trending', params);
+    return apiService.get("/api/news/trending", params);
   }
 
   /**
@@ -81,16 +81,17 @@ class NewsService {
    */
   async getByCategory(category: string, options: any = {}) {
     if (!category) {
-      throw new Error('Category cannot be empty');
+      throw new Error("Category cannot be empty");
     }
 
     const params = {
       category: category.trim(),
       limit: options.limit || 20,
-      language: options.language || 'en'
+      language: options.language || "en",
+      page: options?.page || 1,
     };
 
-    return apiService.get('/api/news/category', params);
+    return apiService.get("/api/news/category", params);
   }
 
   /**
@@ -101,16 +102,17 @@ class NewsService {
    */
   async getBySource(source: string, options: any = {}) {
     if (!source) {
-      throw new Error('Source cannot be empty');
+      throw new Error("Source cannot be empty");
     }
 
     const params = {
       source: source.trim(),
       limit: options.limit || 20,
-      language: options.language || 'en'
+      language: options.language || "en",
+      page: options?.page || 1,
     };
 
-    return apiService.get('/api/news/source', params);
+    return apiService.get("/api/news/source", params);
   }
 
   /**
@@ -120,19 +122,23 @@ class NewsService {
    * @param options - Options
    * @returns Date range news results
    */
-  async getByDateRange(startDate: string | Date, endDate: string | Date, options: any = {}) {
+  async getByDateRange(
+    startDate: string | Date,
+    endDate: string | Date,
+    options: any = {}
+  ) {
     if (!startDate || !endDate) {
-      throw new Error('Start date and end date are required');
+      throw new Error("Start date and end date are required");
     }
 
     const params = {
       startDate: new Date(startDate).toISOString(),
       endDate: new Date(endDate).toISOString(),
       limit: options.limit || 20,
-      language: options.language || 'en'
+      language: options.language || "en",
     };
 
-    return apiService.get('/api/news/date-range', params);
+    return apiService.get("/api/news/date-range", params);
   }
 }
 

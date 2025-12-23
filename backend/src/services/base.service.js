@@ -56,17 +56,22 @@ class BaseService {
    * @param {Object} filter - MongoDB filter
    * @param {Object} options - Query options
    * @param {number} options.limit - Limit number of results
-   * @param {number} options.skip - Skip number of results
+   * @param {number} options.page - Page number (1-based)
+   * @param {number} options.skip - Skip number of results (overrides page if provided)
    * @param {Object} options.sort - Sort options
    * @returns {Promise<Object>} - Paginated results
    */
   async findWithPagination(filter = {}, options = {}) {
     const {
       limit = 20,
-      skip = 0,
+      page = 1,
+      skip,
       sort = { createdAt: -1 },
       select = ''
     } = options;
+
+    // Calculate skip based on page number if skip is not explicitly provided
+    const calculatedSkip = skip !== undefined ? skip : (page - 1) * limit;
 
     try {
       const [results, totalCount] = await Promise.all([
@@ -74,7 +79,7 @@ class BaseService {
           .select(select)
           .sort(sort)
           .limit(limit)
-          .skip(skip)
+          .skip(calculatedSkip)
           .lean(),
         this.model.countDocuments(filter)
       ]);
@@ -83,8 +88,9 @@ class BaseService {
         results,
         totalCount,
         limit: parseInt(limit),
-        skip: parseInt(skip),
-        hasMore: skip + limit < totalCount
+        page: parseInt(page),
+        skip: parseInt(calculatedSkip),
+        hasMore: calculatedSkip + limit < totalCount
       };
     } catch (error) {
       this.logger.error('Find with pagination failed', error);

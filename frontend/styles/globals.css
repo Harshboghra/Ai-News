@@ -1,14 +1,17 @@
-/* Modern News App Design */
+/* Import Design System */
+@import 'design-system.css';
+
+/* Modern News App Design - Using Design System Variables */
 :root {
   --primary-color: #2563eb;
   --primary-hover: #1d4ed8;
   --text-primary: #1f2937;
   --text-secondary: #6b7280;
-  --bg-color: #f8fafc;
-  --card-bg: #ffffff;
-  --border-color: #e5e7eb;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --bg-color: var(--bg-primary);
+  --card-bg: var(--bg-primary);
+  --border-color: var(--border-color);
+  --shadow: var(--shadow-sm);
+  --shadow-hover: var(--shadow-md);
 }
 
 * {

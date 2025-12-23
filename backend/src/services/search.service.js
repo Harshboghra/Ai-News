@@ -253,20 +253,127 @@ class SearchService extends BaseService {
   }
 
   /**
-   * Build search filter based on strategy
+   * Get news by category
+   * @param {string} category - News category
+   * @param {Object} options - Options
+   * @param {number} options.limit - Number of results to return
+   * @param {string} options.language - Language filter
+   * @param {number} options.page - Page number for pagination
+   * @returns {Promise<Object>} - Category news results
+   */
+  async getByCategory(category, options = {}) {
+    if (!category) {
+      throw new Error('Category cannot be empty');
+    }
+
+    const params = {
+      category: category.trim(),
+      limit: options.limit || 20,
+      language: options.language || 'en',
+      page: options.page || 1
+    };
+
+    try {
+      // Use the base service to find news by category
+      const filter = {
+        category: params.category,
+        language: params.language
+      };
+
+      const result = await this.findWithPagination(filter, {
+        limit: params.limit,
+        page: params.page,
+        sort: { publishedAt: -1 }
+      });
+
+      console.log('Pagination parameters:', {
+        category: params.category,
+        page: params.page,
+        limit: params.limit,
+        calculatedSkip: (params.page - 1) * params.limit
+      });
+
+      console.log('Category search result:', {
+        category: params.category,
+        page: params.page,
+        limit: params.limit,
+        totalCount: result.totalCount,
+        resultsCount: result.results.length
+      });
+
+      return {
+        category: params.category,
+        news: result.results,
+        pagination: {
+          page: params.page,
+          limit: params.limit,
+          total: result.totalCount,
+          hasMore: result.hasMore
+        },
+        stats: {
+          category: params.category,
+          totalNews: result.totalCount,
+          todayNews: 0, // Would need additional logic to calculate
+          weekNews: 0,
+          monthNews: 0,
+          averageScore: 0,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      this.logger.error('Failed to get category news', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all available categories
+   * @param {Object} options - Options
+   * @param {string} options.language - Language filter
+   * @returns {Promise<Array>} - Available categories
+   */
+  async getCategories(options = {}) {
+    const params = {
+      language: options.language || 'en'
+    };
+
+    return this.request('/api/news/categories', params);
+  }
+
+  /**
+   * Get category statistics
+   * @param {string} category - News category
+   * @param {Object} options - Options
+   * @param {string} options.language - Language filter
+   * @returns {Promise<Object>} - Category statistics
+   */
+  async getCategoryStats(category, options = {}) {
+    if (!category) {
+      throw new Error('Category cannot be empty');
+    }
+
+    const params = {
+      category: category.trim(),
+      language: options.language || 'en'
+    };
+
+    return this.request('/api/news/category/stats', params);
+  }
+
+  /**
+   * Build search filter
    * @param {string} query - Search query
-   * @param {string|null} language - Language filter
+   * @param {string} language - Language filter
    * @param {string} strategy - Search strategy
    * @returns {Object} - MongoDB filter
    */
   buildSearchFilter(query, language, strategy) {
     const regex = this.buildSearchRegex(query, strategy);
-    
     const filter = {
       $or: [
         { title: regex },
-        { tags: regex },
-        { description: regex }
+        { description: regex },
+        { content: regex }
       ]
     };
 
@@ -410,4 +517,6 @@ class SearchService extends BaseService {
   }
 }
 
-module.exports = SearchService;
+// Export singleton instance
+const searchService = new SearchService();
+module.exports = searchService;

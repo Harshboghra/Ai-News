@@ -7,6 +7,7 @@ const {
     getExactMatchScore
 } = require("../utils/ranking");
 const trackSearch = require("../utils/trackSearch");
+const searchService = require("../services/search.service");
 
 // 🕒 LATEST NEWS
 exports.getLatestNews = async (req, res) => {
@@ -26,63 +27,193 @@ exports.getLatestNews = async (req, res) => {
     }
 };
 
+// Enhanced search with service layer
 exports.searchNews = async (req, res) => {
     try {
-        const { q, limit = 20 } = req.query;
-        if (!q) return res.status(400).json({ message: "Query required" });
+        const { q: query, limit = 20, language = 'en' } = req.query;
 
-        const detectedLanguage = detectLanguage(q);
-
-        // 1️⃣ Try detected language
-        let results = await searchWithLanguage(q, detectedLanguage);
-
-        // 2️⃣ Fallback to English
-        if (results.length === 0 && detectedLanguage !== "en") {
-            results = await searchWithLanguage(q, "en");
+        if (!query) {
+            return res.status(400).json({
+                success: false,
+                message: "Search query is required",
+                errors: ["Query parameter 'q' is required"]
+            });
         }
 
-        res.json({
-            detectedLanguage,
-            results: results.slice(0, Number(limit))
+        const result = await searchService.searchNews(query, {
+            limit: parseInt(limit),
+            language
         });
-    } catch (err) {
-        res.status(500).json({ message: "Search failed" });
+
+        res.json({
+            success: true,
+            data: result,
+            message: "Search completed successfully"
+        });
+    } catch (error) {
+        console.error("Search error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Search failed",
+            errors: [error.message]
+        });
     }
 };
 
+// Enhanced suggestions with service layer
 exports.suggestNews = async (req, res) => {
     try {
-        const { q, language = "en", limit = 8 } = req.query;
+        const { q: query, limit = 8, language = 'en' } = req.query;
 
-        if (!q) return res.status(400).json({ message: "Query required" });
+        if (!query || query.trim().length < 2) {
+            return res.status(400).json({
+                success: false,
+                message: "Query must be at least 2 characters long",
+                errors: ["Invalid query parameter"]
+            });
+        }
 
-        trackSearch(q);
+        const suggestions = await searchService.getSuggestions(query, {
+            limit: parseInt(limit),
+            language
+        });
 
-        // Use full-text search for suggestions too
-        const regex = new RegExp(q, "i");
-
-        const suggestions = await News.find(
-            {
-                language,
-                $or: [
-                    { title: regex },
-                    { tags: regex },
-                    { description: regex }
-                ]
-            },
-            {
-                title: 1,
-                source: 1,
-                publishedAt: 1,
-                description: 1
-            }
-        )
-            .sort({ publishedAt: -1 })
-            .limit(Number(limit));
-
-        res.json(suggestions);
+        res.json({
+            success: true,
+            data: suggestions,
+            message: "Suggestions retrieved successfully"
+        });
     } catch (error) {
-        res.status(500).json({ message: "Suggestion failed" });
+        console.error("Get suggestions error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get suggestions",
+            errors: [error.message]
+        });
+    }
+};
+
+// Category-based endpoints
+exports.getByCategory = async (req, res) => {
+    try {
+        const { category, limit = 20, language = 'en', page = 1 } = req.query;
+
+        if (!category) {
+            return res.status(400).json({
+                success: false,
+                message: "Category is required",
+                errors: ["Category parameter is required"]
+            });
+        }
+
+        const result = await searchService.getByCategory(category, {
+            limit: parseInt(limit),
+            language,
+            page: parseInt(page)
+        });
+
+        res.json({
+            success: true,
+            data: result,
+            message: "Category news retrieved successfully"
+        });
+    } catch (error) {
+        console.error("Get by category error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get category news",
+            errors: [error.message]
+        });
+    }
+};
+
+exports.getCategories = async (req, res) => {
+    try {
+        const { language = 'en' } = req.query;
+
+        const categories = await searchService.getCategories({ language });
+
+        res.json({
+            success: true,
+            data: categories,
+            message: "Categories retrieved successfully"
+        });
+    } catch (error) {
+        console.error("Get categories error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get categories",
+            errors: [error.message]
+        });
+    }
+};
+
+exports.getCategoryStats = async (req, res) => {
+    try {
+        const { category, language = 'en' } = req.query;
+
+        if (!category) {
+            return res.status(400).json({
+                success: false,
+                message: "Category is required",
+                errors: ["Category parameter is required"]
+            });
+        }
+
+        const stats = await searchService.getCategoryStats(category, { language });
+
+        res.json({
+            success: true,
+            data: stats,
+            message: "Category statistics retrieved successfully"
+        });
+    } catch (error) {
+        console.error("Get category stats error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get category statistics",
+            errors: [error.message]
+        });
+    }
+};
+
+exports.getTrending = async (req, res) => {
+    try {
+        const { limit = 8 } = req.query;
+
+        const trends = await searchService.getTrending({ limit: parseInt(limit) });
+
+        res.json({
+            success: true,
+            data: trends,
+            message: "Trending searches retrieved successfully"
+        });
+    } catch (error) {
+        console.error("Get trending error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get trending searches",
+            errors: [error.message]
+        });
+    }
+};
+
+exports.getSearchStats = async (req, res) => {
+    try {
+        const stats = await searchService.getSearchStats();
+
+        res.json({
+            success: true,
+            data: stats,
+            message: "Search statistics retrieved successfully"
+        });
+    } catch (error) {
+        console.error("Get search stats error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get search statistics",
+            errors: [error.message]
+        });
     }
 };
 
