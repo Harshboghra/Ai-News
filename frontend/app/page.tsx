@@ -8,34 +8,34 @@ import socket from "../services/socket";
 import useDebounce from "../hooks/useDebounce";
 
 export default function Home() {
-  const [query, setQuery] = useState("");
+  const [blendQuery, setBlendQuery] = useState("");
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const debouncedQuery = useDebounce(query, 300);
+  const debouncedBlendQuery = useDebounce(blendQuery, 300);
 
   // Initial load
   useEffect(() => {
     getLatestNews().then((data) => setNews(data.results));
   }, []);
 
-  // 🔍 Instant search
+  // 🔀 Instant blend
   useEffect(() => {
-    const runSearch = async () => {
-      if (!debouncedQuery) {
+    const runBlend = async () => {
+      if (!debouncedBlendQuery) {
         const data = await getLatestNews();
         setNews(data.results);
         return;
       }
 
       setLoading(true);
-      const data = await searchNews(debouncedQuery);
+      const data = await searchNews(debouncedBlendQuery);
       setNews(data.results);
       setLoading(false);
     };
 
-    runSearch();
-  }, [debouncedQuery]);
+    runBlend();
+  }, [debouncedBlendQuery]);
 
   // 🔴 Live updates
   useEffect(() => {
@@ -50,11 +50,11 @@ export default function Home() {
 
   return (
     <main className="container">
-      <h1>📰 AI News Search</h1>
+      <h1>📰 AI News Blend</h1>
 
-      <SearchBar onSearch={setQuery} />
+      <SearchBar onBlend={setBlendQuery} />
 
-      {loading && <p>Searching...</p>}
+      {loading && <div className="search-loading">🔀 Blending news with "{blendQuery}"...</div>}
 
       <NewsList news={news} />
     </main>

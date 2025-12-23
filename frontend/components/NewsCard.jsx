@@ -1,15 +1,25 @@
-export default function NewsCard({ news }) {
+export default function NewsCard({ news, isNew = false }) {
+  const publishedDate = new Date(news.publishedAt);
+  const formattedDate = publishedDate.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
   return (
-    <div className="card">
-      <h3>{news.title}</h3>
-      <p>{news.description}</p>
+    <div className={`card ${isNew ? 'new-item' : ''}`}>
+      <h3 className="card-title">{news.title}</h3>
+      <p className="card-description">{news.description}</p>
+      
+      <div className="card-meta">
+        <span className="source-badge">{news.source}</span>
+        <span>{formattedDate}</span>
+      </div>
 
-      <small>
-        {news.source} • {new Date(news.publishedAt).toLocaleString()}
-      </small>
-
-      <a href={news.sourceUrl} target="_blank">
-        Read more →
+      <a href={news.sourceUrl} target="_blank" rel="noopener noreferrer" className="card-link">
+        Read more <span className="card-arrow">→</span>
       </a>
     </div>
   );
