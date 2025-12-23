@@ -52,7 +52,7 @@ export default function Home() {
     <main className="container">
       <h1>📰 AI News Search</h1>
 
-      <SearchBar value={query} onChange={setQuery} />
+      <SearchBar onSearch={setQuery} />
 
       {loading && <p>Searching...</p>}
 

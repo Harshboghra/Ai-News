@@ -61,6 +61,7 @@ exports.getLatestNews = async (req, res) => {
 };
 
 exports.searchNews = async (req, res) => {
+    console.log('first')
     try {
         const { q, limit = 20 } = req.query;
         if (!q) return res.status(400).json({ message: "Query required" });
@@ -70,9 +71,11 @@ exports.searchNews = async (req, res) => {
         // 1️⃣ Try detected language
         let results = await searchWithLanguage(q, detectedLanguage);
 
+        console.log('results length: 1', results?.length);
         // 2️⃣ Fallback to English
         if (results.length === 0 && detectedLanguage !== "en") {
             results = await searchWithLanguage(q, "en");
+            console.log('results length: 2', results?.length);
         }
 
         res.json({
@@ -135,13 +138,19 @@ exports.getTrending = async (req, res) => {
 
 async function searchWithLanguage(query, language) {
     try {
+        const regex = new RegExp("^" + query, "i");
         const raw = await News.find(
             {
-                $text: { $search: query },
-                language
+                language,
+                $or: [
+                    { title: regex },
+                    { tags: regex }
+                ]
             },
             {
-                score: { $meta: "textScore" }
+                title: 1,
+                source: 1,
+                publishedAt: 1
             }
         ).limit(50);
 
