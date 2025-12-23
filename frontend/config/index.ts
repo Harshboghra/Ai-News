@@ -81,7 +81,7 @@ const getSecurityConfig = () => {
 };
 
 // Create configuration object
-const config = {
+const appConfig = {
   environment: getEnvironmentConfig(),
   api: getAPIConfig(),
   features: getFeatureFlags(),
@@ -97,15 +97,15 @@ const config = {
   validate: () => {
     const errors = [];
     
-    if (!config.api.baseURL) {
+    if (!appConfig.api.baseURL) {
       errors.push('API baseURL is required');
     }
     
-    if (config.api.timeout < 1000 || config.api.timeout > 60000) {
+    if (appConfig.api.timeout < 1000 || appConfig.api.timeout > 60000) {
       errors.push('API timeout must be between 1000ms and 60000ms');
     }
     
-    if (config.ui.pagination.defaultLimit < 1 || config.ui.pagination.defaultLimit > config.ui.pagination.maxLimit) {
+    if (appConfig.ui.pagination.defaultLimit < 1 || appConfig.ui.pagination.defaultLimit > appConfig.ui.pagination.maxLimit) {
       errors.push('Default page limit must be between 1 and max limit');
     }
     
@@ -117,14 +117,14 @@ const config = {
 };
 
 // Validate configuration on load
-const validation = config.validate();
+const validation = appConfig.validate();
 if (!validation.isValid) {
   console.error('Configuration validation failed:', validation.errors);
-  if (config.isDevelopment()) {
+  if (appConfig.isDevelopment()) {
     console.warn('Continuing with invalid configuration in development mode');
   } else {
     throw new Error('Invalid configuration in production');
   }
 }
 
-module.exports = config;
+module.exports = appConfig;

@@ -8,13 +8,11 @@ import { apiService } from './base';
 class NewsService {
   /**
    * Search for news articles
-   * @param {string} query - Search query
-   * @param {Object} options - Search options
-   * @param {number} options.limit - Number of results to return
-   * @param {string} options.language - Language filter
-   * @returns {Promise<Object>} - Search results
+   * @param query - Search query
+   * @param options - Search options
+   * @returns Search results
    */
-  async searchNews(query, options = {}) {
+  async searchNews(query: string, options: any = {}) {
     if (!query || query.trim().length === 0) {
       throw new Error('Search query cannot be empty');
     }
@@ -30,12 +28,10 @@ class NewsService {
 
   /**
    * Get latest news articles
-   * @param {Object} options - Options
-   * @param {number} options.limit - Number of results to return
-   * @param {string} options.language - Language filter
-   * @returns {Promise<Object>} - Latest news results
+   * @param options - Options
+   * @returns Latest news results
    */
-  async getLatestNews(options = {}) {
+  async getLatestNews(options: any = {}) {
     const params = {
       limit: options.limit || 20,
       language: options.language || 'en'
@@ -46,13 +42,11 @@ class NewsService {
 
   /**
    * Get search suggestions
-   * @param {string} query - Search query
-   * @param {Object} options - Options
-   * @param {number} options.limit - Number of suggestions to return
-   * @param {string} options.language - Language filter
-   * @returns {Promise<Array>} - Search suggestions
+   * @param query - Search query
+   * @param options - Options
+   * @returns Search suggestions
    */
-  async getSuggestions(query, options = {}) {
+  async getSuggestions(query: string, options: any = {}) {
     if (!query || query.trim().length < 2) {
       return [];
     }
@@ -68,11 +62,10 @@ class NewsService {
 
   /**
    * Get trending searches
-   * @param {Object} options - Options
-   * @param {number} options.limit - Number of trends to return
-   * @returns {Promise<Array>} - Trending searches
+   * @param options - Options
+   * @returns Trending searches
    */
-  async getTrending(options = {}) {
+  async getTrending(options: any = {}) {
     const params = {
       limit: options.limit || 8
     };
@@ -82,13 +75,11 @@ class NewsService {
 
   /**
    * Get news by category
-   * @param {string} category - News category
-   * @param {Object} options - Options
-   * @param {number} options.limit - Number of results to return
-   * @param {string} options.language - Language filter
-   * @returns {Promise<Object>} - Category news results
+   * @param category - News category
+   * @param options - Options
+   * @returns Category news results
    */
-  async getByCategory(category, options = {}) {
+  async getByCategory(category: string, options: any = {}) {
     if (!category) {
       throw new Error('Category cannot be empty');
     }
@@ -104,13 +95,11 @@ class NewsService {
 
   /**
    * Get news by source
-   * @param {string} source - News source
-   * @param {Object} options - Options
-   * @param {number} options.limit - Number of results to return
-   * @param {string} options.language - Language filter
-   * @returns {Promise<Object>} - Source news results
+   * @param source - News source
+   * @param options - Options
+   * @returns Source news results
    */
-  async getBySource(source, options = {}) {
+  async getBySource(source: string, options: any = {}) {
     if (!source) {
       throw new Error('Source cannot be empty');
     }
@@ -126,14 +115,12 @@ class NewsService {
 
   /**
    * Get news by date range
-   * @param {string|Date} startDate - Start date
-   * @param {string|Date} endDate - End date
-   * @param {Object} options - Options
-   * @param {number} options.limit - Number of results to return
-   * @param {string} options.language - Language filter
-   * @returns {Promise<Object>} - Date range news results
+   * @param startDate - Start date
+   * @param endDate - End date
+   * @param options - Options
+   * @returns Date range news results
    */
-  async getByDateRange(startDate, endDate, options = {}) {
+  async getByDateRange(startDate: string | Date, endDate: string | Date, options: any = {}) {
     if (!startDate || !endDate) {
       throw new Error('Start date and end date are required');
     }

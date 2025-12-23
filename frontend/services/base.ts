@@ -6,6 +6,10 @@
 const config = require('../config');
 
 class BaseAPIService {
+  baseURL: string;
+  timeout: number;
+  headers: Record<string, string>;
+
   constructor() {
     this.baseURL = config.api.baseURL;
     this.timeout = config.api.timeout;
@@ -17,11 +21,11 @@ class BaseAPIService {
 
   /**
    * Make HTTP request with common configuration
-   * @param {string} endpoint - API endpoint
-   * @param {Object} options - Fetch options
-   * @returns {Promise} - Fetch promise
+   * @param endpoint - API endpoint
+   * @param options - Fetch options
+   * @returns Fetch promise
    */
-  async request(endpoint, options = {}) {
+  async request(endpoint: string, options: any = {}) {
     const url = `${this.baseURL}${endpoint}`;
     
     const config = {
@@ -49,7 +53,7 @@ class BaseAPIService {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
       if (error.name === 'AbortError') {
         throw new APIError(408, 'Request timeout', { message: 'The request timed out' });
       }
@@ -62,11 +66,11 @@ class BaseAPIService {
 
   /**
    * GET request
-   * @param {string} endpoint - API endpoint
-   * @param {Object} params - Query parameters
-   * @returns {Promise} - Fetch promise
+   * @param endpoint - API endpoint
+   * @param params - Query parameters
+   * @returns Fetch promise
    */
-  async get(endpoint, params = {}) {
+  async get(endpoint: string, params: any = {}) {
     const queryString = this.buildQueryString(params);
     const url = queryString ? `${endpoint}?${queryString}` : endpoint;
     
@@ -77,11 +81,11 @@ class BaseAPIService {
 
   /**
    * POST request
-   * @param {string} endpoint - API endpoint
-   * @param {Object} data - Request body
-   * @returns {Promise} - Fetch promise
+   * @param endpoint - API endpoint
+   * @param data - Request body
+   * @returns Fetch promise
    */
-  async post(endpoint, data = {}) {
+  async post(endpoint: string, data: any = {}) {
     return this.request(endpoint, {
       method: 'POST',
       body: JSON.stringify(data)
@@ -90,11 +94,11 @@ class BaseAPIService {
 
   /**
    * PUT request
-   * @param {string} endpoint - API endpoint
-   * @param {Object} data - Request body
-   * @returns {Promise} - Fetch promise
+   * @param endpoint - API endpoint
+   * @param data - Request body
+   * @returns Fetch promise
    */
-  async put(endpoint, data = {}) {
+  async put(endpoint: string, data: any = {}) {
     return this.request(endpoint, {
       method: 'PUT',
       body: JSON.stringify(data)
@@ -103,10 +107,10 @@ class BaseAPIService {
 
   /**
    * DELETE request
-   * @param {string} endpoint - API endpoint
-   * @returns {Promise} - Fetch promise
+   * @param endpoint - API endpoint
+   * @returns Fetch promise
    */
-  async delete(endpoint) {
+  async delete(endpoint: string) {
     return this.request(endpoint, {
       method: 'DELETE'
     });
@@ -114,10 +118,10 @@ class BaseAPIService {
 
   /**
    * Build query string from object
-   * @param {Object} params - Query parameters
-   * @returns {string} - Query string
+   * @param params - Query parameters
+   * @returns Query string
    */
-  buildQueryString(params) {
+  buildQueryString(params: any) {
     if (!params || Object.keys(params).length === 0) {
       return '';
     }
@@ -125,7 +129,7 @@ class BaseAPIService {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
-        searchParams.append(key, value);
+        searchParams.append(key, String(value));
       }
     });
 
@@ -137,7 +141,11 @@ class BaseAPIService {
  * Custom API Error class
  */
 class APIError extends Error {
-  constructor(status, statusText, data) {
+  status: number;
+  statusText: string;
+  data: any;
+
+  constructor(status: number, statusText: string, data: any) {
     super(`${status}: ${statusText}`);
     this.name = 'APIError';
     this.status = status;

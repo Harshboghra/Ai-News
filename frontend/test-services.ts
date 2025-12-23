@@ -22,7 +22,7 @@ try {
   console.log(`   📋 API Base URL: ${config.api.baseURL}`);
   console.log(`   📋 Timeout: ${config.api.timeout}ms`);
   console.log(`   📋 Environment: ${config.environment.isDevelopment ? 'Development' : 'Production'}`);
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Configuration test failed: ${error.message}`);
 }
 
@@ -32,7 +32,7 @@ try {
   console.log(`   📋 Base URL: ${apiService.baseURL}`);
   console.log(`   📋 Timeout: ${apiService.timeout}ms`);
   console.log(`   ✅ Base API Service initialized successfully`);
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Base API Service test failed: ${error.message}`);
 }
 
@@ -41,7 +41,7 @@ console.log('\n3. Testing News Service...');
 try {
   console.log(`   ✅ News Service initialized successfully`);
   console.log(`   📋 Available methods: ${Object.getOwnPropertyNames(newsService.__proto__).filter(name => name !== 'constructor').join(', ')}`);
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ News Service test failed: ${error.message}`);
 }
 
@@ -51,7 +51,7 @@ try {
   console.log(`   ✅ Socket Service initialized successfully`);
   console.log(`   📋 Initial connection status: ${socketService.isConnectedToServer() ? 'Connected' : 'Disconnected'}`);
   console.log(`   📋 Socket ID: ${socketService.getSocketId() || 'Not connected'}`);
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Socket Service test failed: ${error.message}`);
 }
 
@@ -67,13 +67,13 @@ try {
     }
   };
   
-  invalidSearch().then(error => {
+  invalidSearch().then((error: any) => {
     console.log(`   ✅ Error handling works: ${error ? 'PASSED' : 'FAILED'}`);
     if (error) {
       console.log(`   📋 Error message: ${error.message}`);
     }
   });
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Error handling test failed: ${error.message}`);
 }
 
@@ -86,7 +86,7 @@ try {
   console.log(`   📋 Enable Analytics: ${config.features.enableAnalytics}`);
   console.log(`   📋 Enable Debug Mode: ${config.features.enableDebugMode}`);
   console.log(`   ✅ Feature flags loaded successfully`);
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Feature flags test failed: ${error.message}`);
 }
 
@@ -102,7 +102,7 @@ try {
   console.log(`   📋 Min Query Length: ${config.ui.search.minQueryLength}`);
   console.log(`   📋 Max Suggestions: ${config.ui.search.maxSuggestions}`);
   console.log(`   ✅ UI configuration loaded successfully`);
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ UI configuration test failed: ${error.message}`);
 }
 
@@ -114,7 +114,7 @@ try {
   console.log(`   📋 Enable Remote: ${config.logging.enableRemote}`);
   console.log(`   📋 Remote Endpoint: ${config.logging.remoteEndpoint || 'Not configured'}`);
   console.log(`   ✅ Logging configuration loaded successfully`);
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Logging configuration test failed: ${error.message}`);
 }
 
@@ -125,7 +125,7 @@ try {
   console.log(`   📋 Enable HSTS: ${config.security.enableHSTS}`);
   console.log(`   📋 Allowed Origins: ${config.security.allowedOrigins.join(', ')}`);
   console.log(`   ✅ Security configuration loaded successfully`);
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Security configuration test failed: ${error.message}`);
 }
 

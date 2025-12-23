@@ -9,7 +9,7 @@ console.log('🧪 Testing Refactored Components...\n');
 console.log('1. Testing NewsSearch Component...');
 try {
   const fs = require('fs');
-  const newsSearchContent = fs.readFileSync('./components/NewsSearch.jsx', 'utf8');
+  const newsSearchContent = fs.readFileSync('./components/NewsSearch.tsx', 'utf8');
   
   const hasStaticAPI = newsSearchContent.includes('process.env.NEXT_PUBLIC_API_URL');
   const hasDirectFetch = newsSearchContent.includes('fetch(');
@@ -28,7 +28,7 @@ try {
   } else {
     console.log(`   ✅ NewsSearch component refactored successfully`);
   }
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ NewsSearch test failed: ${error.message}`);
 }
 
@@ -36,7 +36,7 @@ try {
 console.log('\n2. Testing SearchBar Component...');
 try {
   const fs = require('fs');
-  const searchBarContent = fs.readFileSync('./components/SearchBar.jsx', 'utf8');
+  const searchBarContent = fs.readFileSync('./components/SearchBar.tsx', 'utf8');
   
   const hasStaticAPI = searchBarContent.includes('process.env.NEXT_PUBLIC_API_URL');
   const hasDirectFetch = searchBarContent.includes('fetch(');
@@ -55,7 +55,7 @@ try {
   } else {
     console.log(`   ✅ SearchBar component refactored successfully`);
   }
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ SearchBar test failed: ${error.message}`);
 }
 
@@ -82,7 +82,7 @@ try {
   } else {
     console.log(`   ✅ Main page component refactored successfully`);
   }
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Main page test failed: ${error.message}`);
 }
 
@@ -107,7 +107,7 @@ try {
   } else {
     console.log(`   ❌ Global configuration issues found`);
   }
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Configuration test failed: ${error.message}`);
 }
 
@@ -139,7 +139,7 @@ try {
   } else {
     console.log(`   ❌ Service architecture issues found`);
   }
-} catch (error) {
+} catch (error: any) {
   console.log(`   ❌ Service architecture test failed: ${error.message}`);
 }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { newsService } from "../services/news.service";
 
-export default function SearchBar({ onBlend }) {
+export default function SearchBar({ onBlend }: any) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -9,19 +9,20 @@ export default function SearchBar({ onBlend }) {
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (query.length < 2) {
+        onBlend(query);
         setSuggestions([]);
         return;
       }
 
       setLoading(true);
       try {
-        const data = await newsService.getSuggestions(query, { 
-          limit: 8, 
-          language: 'en' 
+        const data: any = await newsService.getSuggestions(query, {
+          limit: 8,
+          language: "en",
         });
         setSuggestions(data || []);
       } catch (error) {
-        console.error('Failed to get suggestions:', error);
+        console.error("Failed to get suggestions:", error);
         setSuggestions([]);
       } finally {
         setLoading(false);
@@ -31,8 +32,7 @@ export default function SearchBar({ onBlend }) {
     return () => clearTimeout(timer);
   }, [query]);
 
-  function handleClick(value) {
-    setQuery(value);
+  function handleClick(value: string) {
     setSuggestions([]);
     onBlend(value);
   }
@@ -59,7 +59,7 @@ export default function SearchBar({ onBlend }) {
 
       {suggestions.length > 0 && (
         <div className="suggestions-dropdown">
-          {suggestions.map((item, i) => {
+          {suggestions.map((item: any, i) => {
             const value = item.query || item.title;
             return (
               <div

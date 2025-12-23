@@ -7,7 +7,7 @@ export default function NewsSearch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  async function handleSearch(value) {
+  async function handleSearch(value: any) {
     if (!value || value.trim().length === 0) {
       setResults([]);
       return;
@@ -17,15 +17,15 @@ export default function NewsSearch() {
     setError(null);
 
     try {
-      const data = await newsService.searchNews(value.trim(), { 
-        limit: 20, 
-        language: 'en' 
+      const data: any = await newsService.searchNews(value.trim(), {
+        limit: 20,
+        language: "en",
       });
-      
+
       setResults(data?.results || []);
-    } catch (err) {
-      console.error('Search failed:', err);
-      setError(err.message || 'Search failed. Please try again.');
+    } catch (err: any) {
+      console.error("Search failed:", err);
+      setError(err.message || "Search failed. Please try again.");
       setResults([]);
     } finally {
       setLoading(false);
@@ -38,37 +38,40 @@ export default function NewsSearch() {
 
       {loading && (
         <div className="search-loading">
-          🔍 Searching for "{results.length > 0 ? 'results' : '...'}"...
+          🔍 Searching for "{results.length > 0 ? "results" : "..."}"...
         </div>
       )}
 
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+      {error && <div className="error-message">{error}</div>}
 
       <div className="news-results">
-        {results.map((item) => (
+        {results.map((item: any) => (
           <div key={item._id || item.id} className="card">
             <h3 className="card-title">{item.title}</h3>
             <div className="card-meta">
               <span className="source-badge">{item.source}</span>
               <span>
-                {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : 'Unknown date'}
+                {item.publishedAt
+                  ? new Date(item.publishedAt).toLocaleDateString()
+                  : "Unknown date"}
               </span>
             </div>
             {item.description && (
               <p className="card-description">{item.description}</p>
             )}
             {item.sourceUrl && (
-              <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="card-link">
+              <a
+                href={item.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="card-link"
+              >
                 Read more <span className="card-arrow">→</span>
               </a>
             )}
           </div>
         ))}
-        
+
         {results.length === 0 && !loading && !error && (
           <div className="empty-state">
             <div className="empty-state-icon">📰</div>
