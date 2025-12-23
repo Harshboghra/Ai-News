@@ -1,4 +1,5 @@
 const News = require("../models/News");
+const SearchTrend = require("../models/SearchTrend");
 const detectLanguage = require("../utils/language");
 const {
     getRecencyScore,
@@ -6,6 +7,7 @@ const {
     getSourceScore,
     getExactMatchScore
 } = require("../utils/ranking");
+const trackSearch = require("../utils/trackSearch");
 
 // 🔍 SEARCH NEWS
 // exports.searchNews = async (req, res) => {
@@ -58,9 +60,6 @@ exports.getLatestNews = async (req, res) => {
     }
 };
 
-
-
-
 exports.searchNews = async (req, res) => {
     try {
         const { q, limit = 20 } = req.query;
@@ -83,6 +82,54 @@ exports.searchNews = async (req, res) => {
     } catch (err) {
         console.log("Search error:", err.message);
         res.status(500).json({ message: "Search failed" });
+    }
+};
+
+exports.suggestNews = async (req, res) => {
+    try {
+        const { q, language = "en", limit = 8 } = req.query;
+
+        if (!q) return res.status(400).json({ message: "Query required" });
+
+        trackSearch(q);
+
+        const regex = new RegExp("^" + q, "i");
+
+        const suggestions = await News.find(
+            {
+                language,
+                $or: [
+                    { title: regex },
+                    { tags: regex }
+                ]
+            },
+            {
+                title: 1,
+                source: 1,
+                publishedAt: 1
+            }
+        )
+            .sort({ publishedAt: -1 })
+            .limit(Number(limit));
+
+        res.json(suggestions);
+    } catch (error) {
+        res.status(500).json({ message: "Suggestion failed" });
+    }
+};
+
+exports.getTrending = async (req, res) => {
+    try {
+        const { limit = 8 } = req.query;
+
+        const trends = await SearchTrend.find()
+            .sort({ count: -1, lastSearchedAt: -1 })
+            .limit(Number(limit))
+            .select("query count");
+
+        res.json(trends);
+    } catch {
+        res.status(500).json({ message: "Trending fetch failed" });
     }
 };
 
