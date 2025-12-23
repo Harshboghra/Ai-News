@@ -1,7 +1,7 @@
 const cron = require("node-cron");
-const fetchRSSNews = require("../services/rss.service");
+const rssService = require("../services/rss.service");
 
-cron.schedule("*/1 * * * *", async () => {
+cron.schedule("*/10 * * * *", async () => {
     console.log("Running RSS News Fetch...");
-    await fetchRSSNews();
+    await rssService.fetchAllRSSNews();
 });

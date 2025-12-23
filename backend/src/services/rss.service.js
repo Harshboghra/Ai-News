@@ -258,4 +258,6 @@ class RSSService extends BaseService {
   }
 }
 
-module.exports = RSSService;
+// Export singleton instance
+const rssService = new RSSService();
+module.exports = rssService;
