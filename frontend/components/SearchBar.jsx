@@ -1,11 +1,12 @@
 "use client";
 
-export default function SearchBar({ onSearch }) {
+export default function SearchBar({ value, onChange }) {
   return (
     <input
       type="text"
-      placeholder="Search news..."
-      onChange={(e) => onSearch(e.target.value)}
+      value={value}
+      placeholder="Search news instantly..."
+      onChange={(e) => onChange(e.target.value)}
       className="search-input"
     />
   );

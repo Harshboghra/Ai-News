@@ -81,34 +81,40 @@ exports.searchNews = async (req, res) => {
             results: results.slice(0, Number(limit))
         });
     } catch (err) {
+        console.log("Search error:", err.message);
         res.status(500).json({ message: "Search failed" });
     }
 };
 
 async function searchWithLanguage(query, language) {
-    const raw = await News.find(
-        {
-            $text: { $search: query },
-            language
-        },
-        {
-            textScore: { $meta: "textScore" }
-        }
-    ).limit(50);
+    try {
+        const raw = await News.find(
+            {
+                $text: { $search: query },
+                language
+            },
+            {
+                score: { $meta: "textScore" }
+            }
+        ).limit(50);
 
-    return raw
-        .map(item => {
-            const finalScore =
-                item.textScore * 5 +
-                getRecencyScore(item.publishedAt) +
-                getCategoryScore(query, item.category) +
-                getSourceScore(item.source) +
-                getExactMatchScore(query, item.title);
+        return raw
+            .map(item => {
+                const finalScore =
+                    (item.score || 0) * 5 +
+                    getRecencyScore(item.publishedAt) +
+                    getCategoryScore(query, item.category) +
+                    getSourceScore(item.source) +
+                    getExactMatchScore(query, item.title);
 
-            return {
-                ...item.toObject(),
-                finalScore
-            };
-        })
-        .sort((a, b) => b.finalScore - a.finalScore);
+                return {
+                    ...item.toObject(),
+                    finalScore
+                };
+            })
+            .sort((a, b) => b.finalScore - a.finalScore);
+    } catch (err) {
+        console.error("Search error:", err.message);
+        return [];
+    }
 }

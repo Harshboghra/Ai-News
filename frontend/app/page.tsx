@@ -5,34 +5,42 @@ import SearchBar from "../components/SearchBar";
 import NewsList from "../components/NewsList";
 import { searchNews, getLatestNews } from "../services/api";
 import socket from "../services/socket";
+import useDebounce from "../hooks/useDebounce";
 
 export default function Home() {
-  const [news, setNews] = useState([]);
   const [query, setQuery] = useState("");
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const debouncedQuery = useDebounce(query, 300);
 
   // Initial load
   useEffect(() => {
     getLatestNews().then((data) => setNews(data.results));
   }, []);
 
-  // Search handler
-  const handleSearch = async (value: any) => {
-    setQuery(value);
-
-    if (!value) {
-      const data = await getLatestNews();
-      setNews(data.results);
-      return;
-    }
-
-    const data = await searchNews(value);
-    setNews(data.results);
-  };
-
-  // Live updates
+  // 🔍 Instant search
   useEffect(() => {
-    socket.on("news:new", (newNews) => {
-      setNews((prev) => [newNews, ...prev] as any);
+    const runSearch = async () => {
+      if (!debouncedQuery) {
+        const data = await getLatestNews();
+        setNews(data.results);
+        return;
+      }
+
+      setLoading(true);
+      const data = await searchNews(debouncedQuery);
+      setNews(data.results);
+      setLoading(false);
+    };
+
+    runSearch();
+  }, [debouncedQuery]);
+
+  // 🔴 Live updates
+  useEffect(() => {
+    socket.on("news:new", (item) => {
+      setNews((prev) => [item, ...prev] as typeof prev);
     });
 
     return () => {
@@ -44,7 +52,9 @@ export default function Home() {
     <main className="container">
       <h1>📰 AI News Search</h1>
 
-      <SearchBar onSearch={handleSearch} />
+      <SearchBar value={query} onChange={setQuery} />
+
+      {loading && <p>Searching...</p>}
 
       <NewsList news={news} />
     </main>

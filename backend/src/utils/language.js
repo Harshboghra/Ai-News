@@ -1,6 +1,8 @@
-const franc = require("franc");
+const { franc } = require("franc");
 
 function detectLanguage(text) {
+    if (!text || text.length < 4) return "en";
+
     const langCode = franc(text);
 
     // Map franc → our language codes
