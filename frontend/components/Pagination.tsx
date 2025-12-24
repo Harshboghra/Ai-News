@@ -14,24 +14,14 @@ export default function Pagination({
   className = '' 
 }: PaginationProps) {
   const handlePageChange = (page: number) => {
-    console.log('Pagination clicked:', { 
-      currentPage, 
-      totalPages, 
-      clickedPage: page,
-      isValid: page >= 1 && page <= totalPages && page !== currentPage
-    });
-    
     if (page >= 1 && page <= totalPages && page !== currentPage) {
-      console.log('Calling onPageChange with page:', page);
       onPageChange(page);
-    } else {
-      console.log('Page change blocked - invalid page');
     }
   };
 
   const getVisiblePages = () => {
     const pages = [];
-    const maxVisiblePages = 5;
+    const maxVisiblePages = 7;
     
     if (totalPages <= maxVisiblePages) {
       // Show all pages
@@ -79,43 +69,51 @@ export default function Pagination({
   }
 
   return (
-    <div className={`pagination ${className}`}>
-      <button
-        className="btn btn-ghost pagination-btn"
-        onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        title="Previous page"
-      >
-        ‹ Previous
-      </button>
+    <nav className={`pagination ${className}`} role="navigation" aria-label="Pagination">
+      <div className="pagination-container">
+        <button
+          className="pagination-btn pagination-btn-prev"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          aria-label="Previous page"
+          title="Previous page"
+        >
+          <span className="pagination-arrow">‹</span>
+          <span className="pagination-label">Previous</span>
+        </button>
 
-      <div className="pagination-pages">
-        {visiblePages.map((page, index) => (
-          <button
-            key={index}
-            className={`btn pagination-page ${page === currentPage ? 'btn-primary' : 'btn-ghost'} ${
-              page === -1 ? 'ellipsis' : ''
-            }`}
-            onClick={() => page !== -1 && handlePageChange(page)}
-            disabled={page === -1 || page === currentPage}
-          >
-            {page === -1 ? '...' : page}
-          </button>
-        ))}
+        <div className="pagination-pages" role="list">
+          {visiblePages.map((page, index) => (
+            <button
+              key={index}
+              className={`pagination-page ${page === currentPage ? 'pagination-page-active' : ''} ${
+                page === -1 ? 'pagination-ellipsis' : ''
+              }`}
+              onClick={() => page !== -1 && handlePageChange(page)}
+              disabled={page === -1 || page === currentPage}
+              aria-label={page === -1 ? 'More pages' : `Go to page ${page}`}
+              aria-current={page === currentPage ? 'page' : undefined}
+            >
+              {page === -1 ? '...' : page}
+            </button>
+          ))}
+        </div>
+
+        <button
+          className="pagination-btn pagination-btn-next"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          aria-label="Next page"
+          title="Next page"
+        >
+          <span className="pagination-label">Next</span>
+          <span className="pagination-arrow">›</span>
+        </button>
       </div>
 
-      <button
-        className="btn btn-ghost pagination-btn"
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        title="Next page"
-      >
-        Next ›
-      </button>
-
-      <div className="pagination-info">
+      <div className="pagination-info" aria-live="polite">
         Page {currentPage} of {totalPages}
       </div>
-    </div>
+    </nav>
   );
 }
