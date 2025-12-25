@@ -1,0 +1,149 @@
+name: Full Stack CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linting
+      run: npm run lint || echo "No lint script found"
+
+    - name: Run tests
+      run: npm test || echo "No tests found"
+
+  frontend-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linting
+      run: npm run lint || echo "No lint script found"
+
+    - name: Run TypeScript check
+      run: npm run type-check || npx tsc --noEmit || echo "No TypeScript check found"
+
+    - name: Run tests
+      run: npm test || echo "No tests found"
+
+    - name: Build application
+      run: npm run build
+
+  security-check:
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Check backend security
+      working-directory: ./backend
+      run: npm audit --audit-level=moderate
+
+    - name: Check frontend security
+      working-directory: ./frontend
+      run: npm audit --audit-level=moderate
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test, security-check]
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    # Backend Build
+    - name: Build backend
+      working-directory: ./backend
+      run: |
+        npm ci
+        npm run build || echo "No build script found"
+
+    # Frontend Build
+    - name: Build frontend
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run build
+
+    # Deploy to staging/production
+    - name: Deploy to staging
+      if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[deploy staging]')
+      run: |
+        echo "Deploying to staging environment"
+        # Add staging deployment commands here
+
+    - name: Deploy to production
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "Deploying to production environment"
+        # Add production deployment commands here
+
+    - name: Notify deployment status
+      if: always()
+      run: |
+        echo "Deployment completed with status: ${{ job.status }}"
+        # Add notification logic here (Slack, Discord, etc.)

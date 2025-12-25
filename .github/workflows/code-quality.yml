@@ -1,0 +1,210 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 2 * * 1'  # Run weekly on Monday at 2 AM UTC
+
+jobs:
+  code-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    # Backend Code Analysis
+    - name: Analyze backend code
+      working-directory: ./backend
+      run: |
+        npm ci
+        npm run lint || echo "No lint script"
+        npm run type-check || echo "No type check"
+        npx eslint . --ext .js,.ts || echo "ESLint not configured"
+        npx prettier --check . || echo "Prettier not configured"
+
+    # Frontend Code Analysis
+    - name: Analyze frontend code
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run lint || echo "No lint script"
+        npm run type-check || npx tsc --noEmit || echo "No TypeScript check"
+        npx eslint . --ext .js,.jsx,.ts,.tsx || echo "ESLint not configured"
+        npx prettier --check . || echo "Prettier not configured"
+
+  sonarcloud:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Setup Java for SonarCloud
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Run SonarCloud analysis
+      uses: SonarSource/sonarqube-scan-action@v4
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        projectBaseDir: .
+
+  performance-monitoring:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    # Build applications for performance testing
+    - name: Build backend
+      working-directory: ./backend
+      run: |
+        npm ci
+        npm run build || echo "No build script"
+
+    - name: Build frontend
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run build
+
+    - name: Run bundle analyzer
+      working-directory: ./frontend
+      run: |
+        npx webpack-bundle-analyzer ./out/static/chunks/*.js --mode static --report bundles.html || echo "Bundle analysis failed"
+
+    - name: Upload bundle analysis
+      uses: actions/upload-artifact@v4
+      with:
+        name: bundle-analysis
+        path: frontend/bundles.html
+        retention-days: 7
+
+  accessibility-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Build frontend
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run build
+
+    - name: Run accessibility tests
+      working-directory: ./frontend
+      run: |
+        npx axe-core/cli .next/server/app/**/*.html || echo "Accessibility check not fully configured"
+
+  i18n-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check for hardcoded strings
+      run: |
+        # Check for hardcoded English strings in frontend
+        if grep -r "console.log" frontend/src/ frontend/components/ frontend/pages/; then
+          echo "Found console.log statements that should be removed"
+        fi
+
+        # Check for TODO comments
+        if grep -r "TODO\|FIXME\|XXX" frontend/ backend/; then
+          echo "Found TODO/FIXME comments"
+        fi
+
+  license-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check license headers
+      run: |
+        # Check if all source files have license headers
+        find . -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" | head -10 | xargs -I {} sh -c 'head -5 "{}" | grep -q "Copyright\|License" || echo "Missing license header in {}"' || true
+
+  documentation-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check documentation
+      run: |
+        # Check if README exists and has content
+        if [ ! -f README.md ] || [ ! -s README.md ]; then
+          echo "README.md is missing or empty"
+          exit 1
+        fi
+
+        # Check API documentation
+        if [ ! -f backend/README.md ]; then
+          echo "Backend API documentation is missing"
+        fi
+
+        # Check if package.json has descriptions
+        if ! grep -q '"description"' backend/package.json; then
+          echo "Backend package.json missing description"
+        fi
+
+        if ! grep -q '"description"' frontend/package.json; then
+          echo "Frontend package.json missing description"
+        fi

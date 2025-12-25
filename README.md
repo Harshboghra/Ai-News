@@ -34,6 +34,7 @@ cd backend
 npm start
 ```
 
+
 ### Step 4: Check if Data Exists
 The server automatically fetches RSS feeds every 30 minutes. To manually fetch data:
 
