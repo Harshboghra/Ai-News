@@ -51,7 +51,7 @@ export default function NewsList({
       
       {/* Intersection observer target for infinite scroll */}
       {hasMore && (
-        <div ref={onLoadMoreRef || null} className="infinite-scroll-target" />
+        <div ref={onLoadMoreRef as any} className="infinite-scroll-target" />
       )}
       
       {/* No more content indicator */}

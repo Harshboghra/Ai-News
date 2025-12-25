@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,16 +13,19 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "express": "^4.18.2",
+    "@google-cloud/translate": "^9.3.0",
+    "axios": "^1.5.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "axios": "^1.5.0",
+    "express": "^4.18.2",
+    "franc": "^6.2.0",
+    "helmet": "^7.0.0",
+    "mongoose": "^8.0.0",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.3",
     "node-fetch": "^3.3.2",
     "openai": "^4.14.0",
-    "@google-cloud/translate": "^7.2.0",
-    "helmet": "^7.0.0",
-    "morgan": "^1.10.0",
-    "franc": "^5.4.0",
+    "rss-parser": "^3.13.0",
     "socket.io": "^4.7.2"
   },
   "devDependencies": {
