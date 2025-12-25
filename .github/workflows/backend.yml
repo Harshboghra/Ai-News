@@ -86,7 +86,8 @@ jobs:
           exit 1
         fi
       env:
-        NODE_ENV: production
+        NODE_ENV: test
+        CI: true
 
   security:
     runs-on: ubuntu-latest
