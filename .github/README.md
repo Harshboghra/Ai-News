@@ -51,25 +51,19 @@ This directory contains GitHub Actions workflows for automated CI/CD, testing, a
 
 Configure these secrets in your GitHub repository settings:
 
-### AWS Deployment (for frontend)
-```
-AWS_ACCESS_KEY_ID=your-aws-access-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-S3_BUCKET_NAME=your-s3-bucket-name
-CLOUDFRONT_DISTRIBUTION_ID=your-cloudfront-distribution-id
-```
-
-### Vercel Deployment (alternative)
+### Vercel Deployment (Primary)
 ```
 VERCEL_TOKEN=your-vercel-token
-VERCEL_PROJECT_ID=your-project-id
-VERCEL_ORG_ID=your-org-id
+VERCEL_ORG_ID=your-vercel-org-id
+VERCEL_FRONTEND_PROJECT_ID=your-frontend-project-id
+VERCEL_BACKEND_PROJECT_ID=your-backend-project-id
 ```
 
 ### Testing & Monitoring
 ```
 SONAR_TOKEN=your-sonarcloud-token
-FRONTEND_URL=https://your-frontend-domain.com
+FRONTEND_URL=https://your-frontend-domain.vercel.app
+BACKEND_URL=https://your-backend-domain.vercel.app
 ```
 
 ### Notifications (optional)

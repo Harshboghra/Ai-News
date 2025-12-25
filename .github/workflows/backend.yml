@@ -150,13 +150,22 @@ jobs:
     - name: Build application
       run: npm run build || echo "No build script found"
 
-    - name: Deploy to production
-      run: echo "Deploy to production server"
-      # Add your deployment commands here
-      # Example: rsync, scp, docker push, etc.
+    - name: Deploy to Vercel (Serverless Functions)
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+        working-directory: ./backend
+        vercel-args: '--prod'
 
     - name: Health check
       run: |
-        # Add health check after deployment
-        echo "Application deployed successfully"
-        # curl -f http://your-server/health || exit 1
+        # Wait for deployment to propagate
+        sleep 30
+        # Check if the backend deployment was successful
+        if [ -n "${{ secrets.BACKEND_URL }}" ]; then
+          curl -f ${{ secrets.BACKEND_URL }}/api/news/latest || echo "Backend health check failed"
+        else
+          echo "Backend URL not configured, skipping health check"
+        fi
