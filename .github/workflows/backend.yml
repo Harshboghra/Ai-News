@@ -73,7 +73,18 @@ jobs:
       run: npm run build || echo "No build script found"
 
     - name: Check if application starts successfully
-      run: timeout 30 npm start || echo "Application failed to start" && exit 1
+      run: |
+        # Start the application in background and wait for it to start
+        timeout 10 bash -c 'npm start &' || true
+        sleep 5
+        # Check if the process is still running (application started successfully)
+        if pgrep -f "node src/server.js" > /dev/null; then
+          echo "Application started successfully"
+          pkill -f "node src/server.js"
+        else
+          echo "Application failed to start"
+          exit 1
+        fi
       env:
         NODE_ENV: production
 
