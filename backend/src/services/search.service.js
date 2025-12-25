@@ -27,15 +27,17 @@ class SearchService extends BaseService {
   }
 
   /**
-   * Perform search with multiple strategies
+   * Perform search with multiple strategies and pagination
    * @param {string} query - Search query
    * @param {Object} options - Search options
    * @param {number} options.limit - Result limit
    * @param {string} options.language - Preferred language
-   * @returns {Promise<Object>} - Search results
+   * @param {number} options.page - Page number for pagination
+   * @returns {Promise<Object>} - Search results with pagination
    */
   async searchNews(query, options = {}) {
-    const { limit = 20, language = 'en' } = options;
+    const { limit = 20, language = 'en', page = 1 } = options;
+    const pageNum = parseInt(page);
 
     if (!query || !query.trim()) {
       throw new Error('Search query cannot be empty');
@@ -44,25 +46,28 @@ class SearchService extends BaseService {
     const trimmedQuery = query.trim();
     const detectedLanguage = detectLanguage(trimmedQuery);
 
-    this.logger.info('Starting search', { 
-      query: trimmedQuery, 
-      detectedLanguage, 
-      preferredLanguage: language 
+    this.logger.info('Starting paginated search', {
+      query: trimmedQuery,
+      detectedLanguage,
+      preferredLanguage: language,
+      page: pageNum,
+      limit
     });
 
     // Track search trend
     trackSearch(trimmedQuery);
 
-    // Try different search strategies
+    // Try different search strategies with pagination
     const strategies = this.getSearchStrategies(trimmedQuery, detectedLanguage, language);
     let results = [];
 
     for (const strategy of strategies) {
-      results = await this.executeSearchStrategy(strategy, trimmedQuery, limit);
-      
+      results = await this.executeSearchStrategyWithPagination(strategy, trimmedQuery, limit, pageNum);
+
       if (results.length > 0) {
-        this.logger.info(`Search successful with strategy: ${strategy.type}`, { 
-          resultCount: results.length 
+        this.logger.info(`Search successful with strategy: ${strategy.type}`, {
+          resultCount: results.length,
+          page: pageNum
         });
         break;
       }
@@ -70,13 +75,15 @@ class SearchService extends BaseService {
 
     // If no results found, try fallback strategies
     if (results.length === 0) {
-      results = await this.executeFallbackSearch(trimmedQuery, limit);
+      results = await this.executeFallbackSearchWithPagination(trimmedQuery, limit, pageNum);
     }
 
     return {
       detectedLanguage,
       results: results.slice(0, limit),
-      strategy: results.length > 0 ? 'success' : 'fallback'
+      strategy: results.length > 0 ? 'success' : 'fallback',
+      page: pageNum,
+      limit: parseInt(limit)
     };
   }
 
@@ -137,16 +144,48 @@ class SearchService extends BaseService {
       switch (strategy.type) {
         case this.searchStrategies.EXACT_MATCH:
           return await this.searchWithExactMatch(query, strategy.language, limit);
-        
+
         case this.searchStrategies.FUZZY_MATCH:
           return await this.searchWithFuzzyMatch(query, strategy.language, limit);
-        
+
         case this.searchStrategies.LANGUAGE_SPECIFIC:
           return await this.searchWithLanguage(query, strategy.language, limit);
-        
+
         case this.searchStrategies.FALLBACK_ENGLISH:
           return await this.searchWithLanguage(query, 'en', limit);
-        
+
+        default:
+          return [];
+      }
+    } catch (error) {
+      this.logger.error(`Search strategy failed: ${strategy.type}`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Execute specific search strategy with pagination
+   * @param {Object} strategy - Search strategy
+   * @param {string} query - Search query
+   * @param {number} limit - Result limit
+   * @param {number} page - Page number
+   * @returns {Promise<Array>} - Search results
+   */
+  async executeSearchStrategyWithPagination(strategy, query, limit, page) {
+    try {
+      switch (strategy.type) {
+        case this.searchStrategies.EXACT_MATCH:
+          return await this.searchWithExactMatchPaginated(query, strategy.language, limit, page);
+
+        case this.searchStrategies.FUZZY_MATCH:
+          return await this.searchWithFuzzyMatchPaginated(query, strategy.language, limit, page);
+
+        case this.searchStrategies.LANGUAGE_SPECIFIC:
+          return await this.searchWithLanguagePaginated(query, strategy.language, limit, page);
+
+        case this.searchStrategies.FALLBACK_ENGLISH:
+          return await this.searchWithLanguagePaginated(query, 'en', limit, page);
+
         default:
           return [];
       }
@@ -173,6 +212,32 @@ class SearchService extends BaseService {
 
     // Try partial word matching
     const partialResults = await this.searchWithPartialMatch(query, limit);
+    if (partialResults.length > 0) {
+      return partialResults;
+    }
+
+    // Return empty results if all strategies failed
+    return [];
+  }
+
+  /**
+   * Execute fallback search strategies with pagination
+   * @param {string} query - Search query
+   * @param {number} limit - Result limit
+   * @param {number} page - Page number
+   * @returns {Promise<Array>} - Search results
+   */
+  async executeFallbackSearchWithPagination(query, limit, page) {
+    this.logger.info('Executing fallback search strategies with pagination');
+
+    // Try broader search without language filter
+    const broadResults = await this.searchWithFuzzyMatchPaginated(query, null, limit * 2, page);
+    if (broadResults.length > 0) {
+      return broadResults.slice(0, limit);
+    }
+
+    // Try partial word matching
+    const partialResults = await this.searchWithPartialMatchPaginated(query, limit, page);
     if (partialResults.length > 0) {
       return partialResults;
     }
@@ -243,9 +308,88 @@ class SearchService extends BaseService {
    */
   async searchWithPartialMatch(query, limit) {
     const filter = this.buildSearchFilter(query, null, 'partial');
-    
+
     const rawResults = await this.findWithPagination(filter, {
       limit: limit * 2,
+      sort: { publishedAt: -1 }
+    });
+
+    return this.rankResults(rawResults.results, query);
+  }
+
+  /**
+   * Search with exact match and pagination
+   * @param {string} query - Search query
+   * @param {string} language - Language filter
+   * @param {number} limit - Result limit
+   * @param {number} page - Page number
+   * @returns {Promise<Array>} - Search results
+   */
+  async searchWithExactMatchPaginated(query, language, limit, page) {
+    const filter = this.buildSearchFilter(query, language, 'exact');
+
+    const rawResults = await this.findWithPagination(filter, {
+      limit: limit * 2,
+      page: page,
+      sort: { publishedAt: -1 }
+    });
+
+    return this.rankResults(rawResults.results, query);
+  }
+
+  /**
+   * Search with fuzzy match and pagination
+   * @param {string} query - Search query
+   * @param {string} language - Language filter
+   * @param {number} limit - Result limit
+   * @param {number} page - Page number
+   * @returns {Promise<Array>} - Search results
+   */
+  async searchWithFuzzyMatchPaginated(query, language, limit, page) {
+    const filter = this.buildSearchFilter(query, language, 'fuzzy');
+
+    const rawResults = await this.findWithPagination(filter, {
+      limit: limit * 3,
+      page: page,
+      sort: { publishedAt: -1 }
+    });
+
+    return this.rankResults(rawResults.results, query);
+  }
+
+  /**
+   * Search with language-specific filtering and pagination
+   * @param {string} query - Search query
+   * @param {string} language - Language filter
+   * @param {number} limit - Result limit
+   * @param {number} page - Page number
+   * @returns {Promise<Array>} - Search results
+   */
+  async searchWithLanguagePaginated(query, language, limit, page) {
+    const filter = this.buildSearchFilter(query, language, 'fuzzy');
+
+    const rawResults = await this.findWithPagination(filter, {
+      limit: limit * 2,
+      page: page,
+      sort: { publishedAt: -1 }
+    });
+
+    return this.rankResults(rawResults.results, query);
+  }
+
+  /**
+   * Search with partial word matching and pagination
+   * @param {string} query - Search query
+   * @param {number} limit - Result limit
+   * @param {number} page - Page number
+   * @returns {Promise<Array>} - Search results
+   */
+  async searchWithPartialMatchPaginated(query, limit, page) {
+    const filter = this.buildSearchFilter(query, null, 'partial');
+
+    const rawResults = await this.findWithPagination(filter, {
+      limit: limit * 2,
+      page: page,
       sort: { publishedAt: -1 }
     });
 

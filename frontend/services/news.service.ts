@@ -27,14 +27,15 @@ class NewsService {
   }
 
   /**
-   * Get latest news articles
-   * @param options - Options
+   * Get latest news articles with pagination
+   * @param options - Options including page
    * @returns Latest news results
    */
   async getLatestNews(options: any = {}) {
     const params = {
       limit: options.limit || 20,
       language: options.language || "en",
+      page: options.page || 1,
     };
 
     return apiService.get("/api/news/latest", params);
@@ -74,10 +75,10 @@ class NewsService {
   }
 
   /**
-   * Get news by category
+   * Get news by category with pagination support
    * @param category - News category
-   * @param options - Options
-   * @returns Category news results
+   * @param options - Options including page and limit
+   * @returns Category news results with pagination info
    */
   async getByCategory(category: string, options: any = {}) {
     if (!category) {
@@ -95,10 +96,10 @@ class NewsService {
   }
 
   /**
-   * Get news by source
+   * Get news by source with pagination support
    * @param source - News source
-   * @param options - Options
-   * @returns Source news results
+   * @param options - Options including page and limit
+   * @returns Source news results with pagination info
    */
   async getBySource(source: string, options: any = {}) {
     if (!source) {
@@ -139,6 +140,61 @@ class NewsService {
     };
 
     return apiService.get("/api/news/date-range", params);
+  }
+
+  /**
+   * Load more news for infinite scroll - Category
+   * @param category - News category
+   * @param currentPage - Current page number
+   * @param options - Additional options
+   * @returns Next page of category news
+   */
+  async loadMoreCategoryNews(category: string, currentPage: number, options: any = {}) {
+    return this.getByCategory(category, {
+      ...options,
+      page: currentPage + 1
+    });
+  }
+
+  /**
+   * Load more news for infinite scroll - Source
+   * @param source - News source
+   * @param currentPage - Current page number
+   * @param options - Additional options
+   * @returns Next page of source news
+   */
+  async loadMoreSourceNews(source: string, currentPage: number, options: any = {}) {
+    return this.getBySource(source, {
+      ...options,
+      page: currentPage + 1
+    });
+  }
+
+  /**
+   * Load more news for infinite scroll - Search
+   * @param query - Search query
+   * @param currentPage - Current page number
+   * @param options - Additional options
+   * @returns Next page of search results
+   */
+  async loadMoreSearchNews(query: string, currentPage: number, options: any = {}) {
+    return this.searchNews(query, {
+      ...options,
+      page: currentPage + 1
+    });
+  }
+
+  /**
+   * Load more news for infinite scroll - Latest
+   * @param currentPage - Current page number
+   * @param options - Additional options
+   * @returns Next page of latest news
+   */
+  async loadMoreLatestNews(currentPage: number, options: any = {}) {
+    return this.getLatestNews({
+      ...options,
+      page: currentPage + 1
+    });
   }
 }
 

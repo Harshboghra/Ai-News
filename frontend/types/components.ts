@@ -36,8 +36,12 @@ export interface NewsCardProps extends BaseComponentProps {
 export interface NewsListProps extends BaseComponentProps {
   news: NewsItem[];
   isLoading?: boolean;
+  isLoadingMore?: boolean;
+  hasMore?: boolean;
   onNewsClick?: (news: NewsItem) => void;
   emptyStateMessage?: string;
+  onLoadMoreRef?: React.RefObject<HTMLDivElement | null>;
+  onRetryLoadMore?: () => void;
 }
 
 // NewsSearch Component Props

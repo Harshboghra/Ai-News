@@ -9,28 +9,58 @@ const {
 const trackSearch = require("../utils/trackSearch");
 const searchService = require("../services/search.service");
 
-// 🕒 LATEST NEWS
+// 🕒 LATEST NEWS WITH PAGINATION
 exports.getLatestNews = async (req, res) => {
     try {
-        const { language = "en", limit = 20 } = req.query;
+        const { language = "en", limit = 20, page = 1 } = req.query;
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
 
+        // Get total count for pagination
+        const totalCount = await News.countDocuments({ language });
+
+        // Get paginated results
         const news = await News.find({ language })
             .sort({ publishedAt: -1 })
-            .limit(Number(limit));
+            .skip(skip)
+            .limit(limitNum);
+
+        const totalPages = Math.ceil(totalCount / limitNum);
+        const hasNext = pageNum < totalPages;
+        const hasPrev = pageNum > 1;
 
         res.json({
-            count: news.length,
-            results: news
+            success: true,
+            data: {
+                news,
+                pagination: {
+                    currentPage: pageNum,
+                    totalPages,
+                    totalCount,
+                    hasNext,
+                    hasPrev,
+                    limit: limitNum
+                }
+            },
+            message: "Latest news retrieved successfully"
         });
     } catch (error) {
-        res.status(500).json({ message: "Failed to fetch latest news" });
+        console.error("Get latest news error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch latest news",
+            errors: [error.message]
+        });
     }
 };
 
-// Enhanced search with service layer
+// Enhanced search with pagination support
 exports.searchNews = async (req, res) => {
     try {
-        const { q: query, limit = 20, language = 'en' } = req.query;
+        const { q: query, limit = 20, language = 'en', page = 1 } = req.query;
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
 
         if (!query) {
             return res.status(400).json({
@@ -40,14 +70,29 @@ exports.searchNews = async (req, res) => {
             });
         }
 
+        // Perform search with pagination
         const result = await searchService.searchNews(query, {
-            limit: parseInt(limit),
-            language
+            limit: limitNum,
+            language,
+            page: pageNum
         });
+
+        // Calculate pagination metadata for search results
+        // Note: Since search results are ranked and limited, we can't get accurate total count
+        // We'll use the result length to determine if there are more results
+        const hasMore = result.results && result.results.length === limitNum;
 
         res.json({
             success: true,
-            data: result,
+            data: {
+                news: result.results || [],
+                pagination: {
+                    currentPage: pageNum,
+                    hasNext: hasMore,
+                    hasPrev: pageNum > 1,
+                    limit: limitNum
+                }
+            },
             message: "Search completed successfully"
         });
     } catch (error) {

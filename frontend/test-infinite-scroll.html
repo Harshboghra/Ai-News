@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Scroll Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .news-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .news-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .news-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .news-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .news-content {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.4;
+        }
+        
+        .loading-state, .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            font-size: 24px;
+            margin-bottom: 10px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .infinite-scroll-loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .infinite-scroll-end {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .infinite-scroll-target {
+            height: 1px;
+            background: transparent;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .stats {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📰 Infinite Scroll Test</h1>
+        
+        <div class="controls">
+            <button id="loadBtn" class="btn">Load Initial News</button>
+            <button id="resetBtn" class="btn">Reset</button>
+            <span id="stats" class="stats">News loaded: 0 | Has more: Yes</span>
+        </div>
+        
+        <div id="newsGrid" class="grid">
+            <!-- News items will be inserted here -->
+        </div>
+        
+        <div id="loadingIndicator" class="loading-state" style="display: none;">
+            <div class="loading-spinner">📰</div>
+            <p>Loading news...</p>
+        </div>
+    </div>
+
+    <script>
+        // Mock news data
+        const mockNewsData = Array.from({ length: 100 }, (_, i) => ({
+            _id: `news-${i + 1}`,
+            title: `News Article ${i + 1}`,
+            source: `Source ${Math.floor(Math.random() * 10) + 1}`,
+            publishedAt: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString(),
+            description: `This is a description for news article ${i + 1}. It contains some interesting information about current events.`,
+            content: `Full content for article ${i + 1}...`,
+            language: 'en',
+            category: ['technology', 'sports', 'business', 'entertainment'][Math.floor(Math.random() * 4)]
+        }));
+
+        // State
+        let news = [];
+        let currentPage = 0;
+        let hasMore = true;
+        let isLoading = false;
+        let observer = null;
+
+        // DOM elements
+        const newsGrid = document.getElementById('newsGrid');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const stats = document.getElementById('stats');
+        const loadBtn = document.getElementById('loadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Utility functions
+        function updateStats() {
+            stats.textContent = `News loaded: ${news.length} | Has more: ${hasMore ? 'Yes' : 'No'} | Current page: ${currentPage}`;
+        }
+
+        function createNewsCard(item) {
+            const card = document.createElement('div');
+            card.className = 'news-card';
+            card.innerHTML = `
+                <div class="news-title">${item.title}</div>
+                <div class="news-meta">${item.source} • ${new Date(item.publishedAt).toLocaleDateString()}</div>
+                <div class="news-content">${item.description}</div>
+            `;
+            return card;
+        }
+
+        function appendNewsItems(newItems) {
+            newItems.forEach(item => {
+                newsGrid.appendChild(createNewsCard(item));
+            });
+        }
+
+        // Mock API functions
+        async function loadInitialNews() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            loadingIndicator.style.display = 'block';
+            newsGrid.innerHTML = '';
+            
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const initialItems = mockNewsData.slice(0, 20);
+            news = initialItems;
+            currentPage = 1;
+            hasMore = news.length === 20;
+            
+            appendNewsItems(initialItems);
+            updateStats();
+            
+            isLoading = false;
+            loadingIndicator.style.display = 'none';
+            
+            setupInfiniteScroll();
+        }
+
+        async function loadMoreNews() {
+            if (isLoading || !hasMore) return;
+            
+            isLoading = true;
+            const loadingCard = document.createElement('div');
+            loadingCard.className = 'infinite-scroll-loading';
+            loadingCard.innerHTML = '<div class="loading-spinner">📰</div><p>Loading more news...</p>';
+            newsGrid.appendChild(loadingCard);
+            
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            const startIndex = currentPage * 20;
+            const endIndex = startIndex + 20;
+            const newItems = mockNewsData.slice(startIndex, endIndex);
+            
+            // Remove loading indicator
+            loadingCard.remove();
+            
+            if (newItems.length > 0) {
+                appendNewsItems(newItems);
+                news = [...news, ...newItems];
+                currentPage++;
+                hasMore = newItems.length === 20;
+            } else {
+                hasMore = false;
+                const endMessage = document.createElement('div');
+                endMessage.className = 'infinite-scroll-end';
+                endMessage.innerHTML = '<p>🎉 You\'ve reached the end of the news!</p>';
+                newsGrid.appendChild(endMessage);
+            }
+            
+            updateStats();
+            isLoading = false;
+        }
+
+        function setupInfiniteScroll() {
+            // Clean up existing observer
+            if (observer) {
+                observer.disconnect();
+            }
+            
+            // Create intersection observer
+            const target = document.createElement('div');
+            target.className = 'infinite-scroll-target';
+            newsGrid.appendChild(target);
+            
+            observer = new IntersectionObserver(
+                (entries) => {
+                    const entry = entries[0];
+                    if (entry.isIntersecting && !isLoading && hasMore) {
+                        loadMoreNews();
+                    }
+                },
+                {
+                    threshold: 0.1, // Trigger when 10% from bottom (90% scrolled)
+                    rootMargin: '200px'
+                }
+            );
+            
+            observer.observe(target);
+        }
+
+        function reset() {
+            news = [];
+            currentPage = 0;
+            hasMore = true;
+            isLoading = false;
+            
+            if (observer) {
+                observer.disconnect();
+                observer = null;
+            }
+            
+            newsGrid.innerHTML = '';
+            updateStats();
+        }
+
+        // Event listeners
+        loadBtn.addEventListener('click', loadInitialNews);
+        resetBtn.addEventListener('click', reset);
+
+        // Initial setup
+        updateStats();
+    </script>
+</body>
+</html>
