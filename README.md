@@ -1,174 +1,263 @@
-# AI News Search - Troubleshooting Guide
+# 📰 AI-News Application
 
-## 🔧 Search API Issues Fixed
+Real-time AI-powered news aggregation and search application with infinite scroll, built with Next.js (frontend) and Node.js/Express (backend).
 
-Your search API had several issues that have been resolved:
+## ✨ Features
 
-### Issues Fixed:
-1. **Missing MongoDB Text Index** - Added text index on `title` and `description` fields
-2. **Incorrect Field Name** - Fixed `textScore` to `score` in search controller
-3. **Missing Dependencies** - Added `franc` and `socket.io` to package.json
-4. **Index Setup** - Added automatic index creation on server startup
+- 🔄 **Infinite Scroll** - Seamless news browsing without pagination
+- 🤖 **AI-Powered Search** - Intelligent news search and recommendations
+- 📱 **Real-time Updates** - Live news updates via WebSocket
+- 🎨 **Modern UI** - Responsive design with smooth animations
+- 🚀 **Production Ready** - Deployed on Vercel with CI/CD
+- 🔍 **Category Filtering** - Filter news by technology, sports, business, etc.
+- 🌍 **Multi-language Support** - Language detection and translation
+- 📊 **Analytics** - Search trends and usage statistics
 
-## 🚀 How to Fix & Test
+## 🏗️ Architecture
 
-### Step 1: Install Dependencies
+```
+AI-News/
+├── frontend/          # Next.js React application
+├── backend/           # Node.js Express API server
+├── .github/           # GitHub Actions CI/CD workflows
+└── docs/              # Documentation
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js 18+** and **npm 8+**
+- **MongoDB** (local or cloud instance)
+- **Git**
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Harshboghra/Ai-News.git
+   cd AI-News
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm run install:all
+   ```
+
+3. **Setup environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your actual values
+   # Environment variables are centralized in the root .env file
+   # Both frontend and backend read from this single file
+   ```
+
+4. **Start MongoDB:**
+   ```bash
+   # Make sure MongoDB is running on localhost:27017
+   # or update MONGO_URI in .env
+   ```
+
+5. **Start the application:**
+   ```bash
+   # Development mode (both frontend & backend)
+   npm run dev
+
+   # Or start individually:
+   npm run dev:frontend  # Frontend only
+   npm run dev:backend   # Backend only
+   ```
+
+6. **Open your browser:**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3032
+
+## 📋 Available Scripts
+
+### Root Directory Scripts
 ```bash
-cd backend
-npm install
+npm run dev              # Start both frontend & backend in development mode
+npm run start            # Start both frontend & backend in production mode (requires build first)
+npm run build            # Build both frontend & backend for production
+npm run install:all      # Install all dependencies (root + frontend + backend)
+npm run clean            # Clean all build artifacts
+
+# Development vs Production:
+# - npm run dev   : Development mode with hot reload (no build needed)
+# - npm run build : Build for production
+# - npm run start : Start production build (requires npm run build first)
 ```
 
-### Step 2: Start MongoDB
-Make sure MongoDB is running on your system:
+### Windows Batch Files
+```cmd
+dev.bat                  # Start development mode (Windows)
+start.bat                # Start production mode (Windows)
+build.bat                # Build both applications (Windows)
+```
+
+### Frontend Scripts (in `frontend/` directory)
 ```bash
-# Start MongoDB service (varies by system)
-sudo systemctl start mongod  # Linux
-# or
-brew services start mongodb/brew/mongodb-community  # macOS
-# or use MongoDB Compass GUI
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server
+npm run lint             # Run ESLint
+npm run type-check       # Run TypeScript checks
 ```
 
-### Step 3: Run Backend Server
+### Backend Scripts (in `backend/` directory)
 ```bash
-cd backend
-npm start
+npm run dev              # Start with nodemon (hot reload)
+npm run start            # Start production server
+npm test                 # Run tests
 ```
 
+## 🔧 Configuration
 
-### Step 4: Check if Data Exists
-The server automatically fetches RSS feeds every 30 minutes. To manually fetch data:
+### Environment Variables
 
-```bash
-# In another terminal, run the test script
-node backend/test-search.js
-```
-
-### Step 5: Test Search API
-Once you have data, test the search endpoint:
-
-```bash
-# Test search for "technology"
-curl "http://localhost:5000/api/news/search?q=technology"
-
-# Test search for "sports"
-curl "http://localhost:5000/api/news/search?q=sports"
-
-# Test latest news
-curl "http://localhost:5000/api/news/latest"
-```
-
-### Step 6: Run Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## 🧪 Testing the Search
-
-### Manual API Testing
-Use these curl commands to test your search API:
+Copy `.env.example` to `.env` and configure:
 
 ```bash
-# Test English search
-curl "http://localhost:5000/api/news/search?q=technology"
+# Database
+MONGO_URI=mongodb://localhost:27017/ai_news
 
-# Test Hindi search
-curl "http://localhost:5000/api/news/search?q=खेल"
+# API Keys
+OPENAI_API_KEY=your-openai-api-key
+GOOGLE_TRANSLATE_API_KEY=your-google-translate-key
 
-# Test Gujarati search
-curl "http://localhost:5000/api/news/search?q=રમત"
-
-# Test latest news
-curl "http://localhost:5000/api/news/latest?limit=10"
+# Vercel (for deployment)
+VERCEL_TOKEN=your-vercel-token
+VERCEL_FRONTEND_PROJECT_ID=your-frontend-project-id
+VERCEL_BACKEND_PROJECT_ID=your-backend-project-id
 ```
 
-### Expected Response Format
-```json
-{
-  "detectedLanguage": "en",
-  "results": [
-    {
-      "_id": "64...",
-      "title": "News Title",
-      "description": "News description...",
-      "language": "en",
-      "category": "technology",
-      "source": "BBC",
-      "publishedAt": "2024-01-01T00:00:00.000Z",
-      "finalScore": 15.5
-    }
-  ]
-}
+### Required API Keys
+
+- **OpenAI API Key**: For AI-powered search features
+- **Google Translate API Key**: For language translation
+- **MongoDB Connection**: Database for news storage
+
+## 🏃‍♂️ Windows Batch Files
+
+For Windows users, you can use the provided batch files:
+
+```cmd
+dev.bat      # Start development mode (both frontend & backend)
+build.bat    # Build both applications for production
+start.bat    # Build and start production mode (both services)
 ```
 
-## 🔍 Search Features
+**These batch files are kept in the root directory for Windows convenience.**
 
-### AI-Powered Ranking
-Your search uses multiple scoring factors:
-- **Text Relevance** (5x weight) - How well the query matches
-- **Recency** - Newer articles get higher scores
-- **Category Match** - Articles in relevant categories rank higher
-- **Source Trust** - Trusted sources get bonus points
-- **Exact Match** - Exact title matches get priority
+## 🚀 Deployment
 
-### Multi-Language Support
-- Automatic language detection using `franc`
-- Searches in detected language first
-- Falls back to English if no results
-- Supports English, Hindi, Gujarati, and more
+### Vercel (Recommended)
 
-### Real-Time Updates
-- Socket.IO provides live news updates
-- Instant search as you type (300ms debounce)
-- Live news feed on homepage
+The application is configured for Vercel deployment:
 
-## 🐛 Common Issues & Solutions
+1. **Connect GitHub repository to Vercel**
+2. **Configure environment variables** in Vercel dashboard
+3. **Deploy automatically** via GitHub Actions
 
-### Issue: "No results found"
-**Solution:** 
-1. Check if MongoDB has data: `node backend/test-search.js`
-2. Wait for RSS fetcher to run (every 30 minutes)
-3. Check RSS sources in `backend/src/utils/rssSources.js`
+### Manual Deployment
 
-### Issue: "Search failed" error
-**Solution:**
-1. Check MongoDB connection in `.env`
-2. Verify text indexes were created (check server logs)
-3. Ensure `franc` package is installed
+```bash
+# Build for production
+npm run build
 
-### Issue: "Connection refused"
-**Solution:**
-1. Make sure MongoDB is running
-2. Check if port 5000 is available
-3. Verify `.env` file has correct MongoDB URI
+# Start production servers
+npm run start
+```
 
-### Issue: Frontend can't connect to API
-**Solution:**
-1. Check `NEXT_PUBLIC_API_URL` in frontend `.env`
-2. Ensure backend server is running on port 5000
-3. Check CORS settings in backend
+## 🧪 Testing
 
-## 📊 Performance Tips
+### Automated Testing
+```bash
+# Frontend tests
+cd frontend && npm test
 
-1. **Text Indexes**: Automatically created on startup
-2. **Caching**: Results are cached for 5 minutes
-3. **Debouncing**: Search delays 300ms to reduce API calls
-4. **Limit Results**: Default limit is 20 results
+# Backend tests
+cd backend && npm test
+```
 
-## 🎯 Next Steps
+### E2E Testing
+```bash
+# Run Playwright tests
+npx playwright test
+```
 
-1. **Add More RSS Sources**: Edit `backend/src/utils/rssSources.js`
-2. **Improve AI Ranking**: Modify scoring in `backend/src/utils/ranking.js`
-3. **Add Categories**: Categorize news by keywords
-4. **User Preferences**: Add user-specific language preferences
+## 🔍 API Documentation
+
+### Backend Endpoints
+
+- `GET /api/news/latest` - Get latest news
+- `GET /api/news/search` - Search news
+- `GET /api/news/category` - Get news by category
+- `GET /api/news/trending` - Get trending searches
+
+### Frontend Routes
+
+- `/` - Home page with news feed
+- `/search` - Search results page
+- `/category/[slug]` - Category-specific news
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+frontend/
+├── app/                 # Next.js app directory
+├── components/          # React components
+├── hooks/               # Custom React hooks
+├── services/            # API services
+├── styles/              # CSS styles
+├── types/               # TypeScript types
+└── utils/               # Utility functions
+
+backend/
+├── src/
+│   ├── config/          # Database & app config
+│   ├── controllers/     # Route controllers
+│   ├── models/          # MongoDB models
+│   ├── routes/          # API routes
+│   ├── services/        # Business logic
+│   ├── utils/           # Helper functions
+│   └── server.js        # Main server file
+└── tests/               # Test files
+```
+
+### Key Technologies
+
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **Backend**: Node.js, Express.js, MongoDB
+- **Real-time**: Socket.IO
+- **AI**: OpenAI API
+- **Deployment**: Vercel
+- **CI/CD**: GitHub Actions
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -m 'Add your feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the ISC License - see the LICENSE file for details.
+
+## 👥 Team
+
+- **Developer**: Harshboghra
+- **Repository**: [GitHub](https://github.com/Harshboghra/Ai-News)
 
 ## 📞 Support
 
-If you still have issues:
-1. Check server logs for error messages
-2. Verify MongoDB connection
-3. Test API endpoints with curl
-4. Ensure all dependencies are installed
+- **Issues**: [GitHub Issues](https://github.com/Harshboghra/Ai-News/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Harshboghra/Ai-News/discussions)
 
-The search API should now work properly with AI-powered ranking and multi-language support!
+---
+
+**Happy coding! 🚀**
