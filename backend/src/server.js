@@ -1,56 +1,76 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
 const connectDB = require("./config/db");
 
 const app = express();
-connectDB();
 
-app.use(cors());
+/* -------------------- MIDDLEWARE FIRST -------------------- */
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// 🔥 REQUIRED for Railway OPTIONS preflight
+app.options("*", cors());
+
 app.use(express.json());
 
-// Routes
+/* -------------------- ROUTES -------------------- */
 const newsRoutes = require("./routes/news.routes");
 app.use("/api/news", newsRoutes);
 
-// Start cron jobs
-require("./utils/cron");
-
-// Health check for Railway
+// Health check (Railway uses this)
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
+  res.status(200).json({ status: "OK", time: new Date().toISOString() });
 });
 
-// Railway deployment: Listen on PORT provided by Railway
-const PORT = process.env.PORT || 5000;
+// Root test
+app.get("/", (req, res) => {
+  res.send("AI News Backend running on Railway 🚄");
+});
 
-// For Railway: Always start the server
-const http = require("http");
+/* -------------------- SERVER -------------------- */
+const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 
-// Socket.IO setup (works on Railway)
-const { Server } = require("socket.io");
+/* -------------------- SOCKET.IO -------------------- */
 const io = new Server(server, {
   cors: {
-    origin: "*"
+    origin: "*",
+    methods: ["GET", "POST"]
   }
 });
 
-// Make io global
 global.io = io;
 
-io.on("connection", socket => {
-  console.log("Client connected:", socket.id);
+io.on("connection", (socket) => {
+  console.log("🔌 Client connected:", socket.id);
 
   socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
+    console.log("❌ Client disconnected:", socket.id);
   });
 });
 
-// Start server
+/* -------------------- START SERVER FIRST -------------------- */
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server listening on port ${PORT}`);
 });
 
-// Export app for Railway
+/* -------------------- CONNECT DB AFTER SERVER START -------------------- */
+connectDB()
+  .then(() => {
+    console.log("✅ MongoDB connected");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
+  });
+
+/* -------------------- START CRON AFTER DB -------------------- */
+require("./utils/cron");
+
+/* -------------------- EXPORT APP -------------------- */
 module.exports = app;
