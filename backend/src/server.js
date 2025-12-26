@@ -16,42 +16,41 @@ app.use("/api/news", newsRoutes);
 // Start cron jobs
 require("./utils/cron");
 
-// Vercel serverless function export
-module.exports = function handler(req, res) {
-  return new Promise((resolve) => {
-    req.url = req.url.replace(/^\/api/, '');
-    app(req, res, () => {
-      resolve();
-    });
+// Health check for Railway
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
+});
+
+// Railway deployment: Listen on PORT provided by Railway
+const PORT = process.env.PORT || 5000;
+
+// For Railway: Always start the server
+const http = require("http");
+const server = http.createServer(app);
+
+// Socket.IO setup (works on Railway)
+const { Server } = require("socket.io");
+const io = new Server(server, {
+  cors: {
+    origin: "*"
+  }
+});
+
+// Make io global
+global.io = io;
+
+io.on("connection", socket => {
+  console.log("Client connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
   });
-}
+});
 
-// Local development server setup
-if (require.main === module) {
-  const http = require("http");
-  const server = http.createServer(app);
+// Start server
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
-  // Socket.IO setup for local development only
-  const { Server } = require("socket.io");
-  const io = new Server(server, {
-    cors: {
-      origin: "*"
-    }
-  });
-
-  // Make io global
-  global.io = io;
-
-  io.on("connection", socket => {
-    console.log("Client connected:", socket.id);
-
-    socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
-    });
-  });
-
-  const PORT = process.env.PORT || 5000;
-  server.listen(PORT, () =>
-    console.log(`Server running on ${PORT}`)
-  );
-}
+// Export app for Railway
+module.exports = app;
