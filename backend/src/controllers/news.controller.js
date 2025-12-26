@@ -11,6 +11,7 @@ const searchService = require("../services/search.service");
 
 // 🕒 LATEST NEWS WITH PAGINATION
 exports.getLatestNews = async (req, res) => {
+    console.log("Fetching latest news with pagination");
     try {
         const { language = "en", limit = 20, page = 1 } = req.query;
         const pageNum = parseInt(page);

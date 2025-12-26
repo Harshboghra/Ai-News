@@ -14,6 +14,8 @@ const {
 // Search news
 router.get("/search", searchNews);
 
+
+console.log("Registering news routes...❤️❤️");
 // Get latest news
 router.get("/latest", getLatestNews);
 
