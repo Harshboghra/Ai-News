@@ -9,7 +9,7 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-appapp.get("/health", (req, res) => {
+app.get("/health", (req, res) => {
   res.status(200).send("API is healthy");
 });
 
