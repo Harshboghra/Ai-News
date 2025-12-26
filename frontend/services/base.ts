@@ -3,14 +3,16 @@
  * Centralized HTTP client with common configuration and error handling
  */
 
+const config = require('../config');
+
 class BaseAPIService {
   baseURL: string;
   timeout: number;
   headers: Record<string, string>;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3032';
-    this.timeout = parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '10000');
+    this.baseURL = config.api.baseURL;
+    this.timeout = config.api.timeout;
     this.headers = {
       'Content-Type': 'application/json',
       'X-Client-Version': '1.0.0'
