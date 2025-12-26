@@ -119,7 +119,7 @@ jobs:
         npx webpack-bundle-analyzer ./out/static/chunks/*.js --mode static --report bundles.html || echo "Bundle analysis failed"
 
     - name: Upload bundle analysis
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: bundle-analysis
         path: frontend/bundles.html
