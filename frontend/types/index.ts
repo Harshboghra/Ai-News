@@ -38,13 +38,6 @@ export interface SuggestionsResponse {
   count: number;
 }
 
-export interface TrendingResponse {
-  trends: Array<{
-    query: string;
-    count: number;
-    lastSearchedAt: string;
-  }>;
-}
 
 export interface CategoryResponse {
   categories: string[];

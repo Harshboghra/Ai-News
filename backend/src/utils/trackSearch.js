@@ -1,16 +1,16 @@
-const SearchTrend = require("../models/SearchTrend");
-
+/**
+ * Track search trends (placeholder - SearchTrend functionality removed)
+ * @param {string} query - Search query
+ * @returns {Promise<void>}
+ */
 async function trackSearch(query) {
+    // SearchTrend functionality has been removed
+    // This function is now a no-op placeholder
     if (!query) return;
-
-    await SearchTrend.findOneAndUpdate(
-        { query: query.toLowerCase() },
-        {
-            $inc: { count: 1 },
-            $set: { lastSearchedAt: new Date() }
-        },
-        { upsert: true }
-    );
+    
+    // Previously tracked search trends in database
+    // Now just a placeholder to maintain API compatibility
+    console.log(`Search tracked (placeholder): ${query}`);
 }
 
 module.exports = trackSearch;

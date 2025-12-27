@@ -8,7 +8,6 @@ import {
   SearchResponse,
   LatestResponse,
   SuggestionsResponse,
-  TrendingResponse,
   CategoryResponse,
   SourceResponse,
   DateRangeResponse,

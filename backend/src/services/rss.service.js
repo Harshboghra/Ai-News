@@ -7,7 +7,6 @@ const Parser = require("rss-parser");
 const BaseService = require("./base.service");
 const News = require("../models/News");
 const rssSources = require("../utils/rssSources");
-const SearchTrend = require("../models/SearchTrend");
 
 class RSSService extends BaseService {
   constructor() {
@@ -148,65 +147,12 @@ class RSSService extends BaseService {
           this.logger.debug('Emitted news:new event', { title: newNews.title });
         }
 
-        // Track search trends
-        await this.trackSearchTrends(newNews);
       }
     } catch (error) {
       this.logger.error('Failed to handle new news item', error);
     }
   }
 
-  /**
-   * Track search trends based on news content
-   * @param {Object} news - News document
-   * @returns {Promise<void>}
-   */
-  async trackSearchTrends(news) {
-    try {
-      const keywords = this.extractKeywords(news);
-      
-      for (const keyword of keywords) {
-        await this.updateSearchTrend(keyword);
-      }
-    } catch (error) {
-      this.logger.error('Failed to track search trends', error);
-    }
-  }
-
-  /**
-   * Extract keywords from news content
-   * @param {Object} news - News document
-   * @returns {Array<string>} - Extracted keywords
-   */
-  extractKeywords(news) {
-    const text = `${news.title} ${news.description} ${news.content}`.toLowerCase();
-    
-    // Simple keyword extraction - could be enhanced with NLP
-    const words = text.split(/\s+/).filter(word => word.length > 3);
-    const uniqueWords = [...new Set(words)];
-    
-    return uniqueWords.slice(0, 5); // Return top 5 keywords
-  }
-
-  /**
-   * Update search trend for a keyword
-   * @param {string} keyword - Search keyword
-   * @returns {Promise<void>}
-   */
-  async updateSearchTrend(keyword) {
-    try {
-      await SearchTrend.findOneAndUpdate(
-        { query: keyword },
-        { 
-          $inc: { count: 1 },
-          $set: { lastSearchedAt: new Date() }
-        },
-        { upsert: true }
-      );
-    } catch (error) {
-      this.logger.error(`Failed to update search trend for: ${keyword}`, error);
-    }
-  }
 
   /**
    * Get processing statistics

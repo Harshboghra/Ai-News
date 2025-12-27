@@ -7,7 +7,6 @@ const {
     getByCategory,
     getCategories,
     getCategoryStats,
-    getTrending,
     getSearchStats
 } = require("../controllers/news.controller");
 
@@ -19,9 +18,6 @@ router.get("/latest", getLatestNews);
 
 // Get suggestions
 router.get("/suggest", suggestNews);
-
-// Get trending searches
-router.get("/trending", getTrending);
 
 // Category-based endpoints
 router.get("/category", getByCategory);

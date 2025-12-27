@@ -153,13 +153,6 @@ module.exports = [
         priority: 1
     },
     {
-        source: "Nature",
-        url: "https://www.nature.com/nature/articles?type=article&sort=PubDate&year=2025",
-        language: "en",
-        category: "science",
-        priority: 0.9
-    },
-    {
         source: "Scientific American",
         url: "https://www.scientificamerican.com/rss/",
         language: "en",

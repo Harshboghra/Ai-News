@@ -5,7 +5,6 @@
 
 const BaseService = require("./base.service");
 const News = require("../models/News");
-const SearchTrend = require("../models/SearchTrend");
 const detectLanguage = require("../utils/language");
 const {
   getRecencyScore,
@@ -603,62 +602,6 @@ class SearchService extends BaseService {
     return rawResults.results.slice(0, limit);
   }
 
-  /**
-   * Get trending searches
-   * @param {Object} options - Options
-   * @param {number} options.limit - Limit
-   * @returns {Promise<Array>} - Trending searches
-   */
-  async getTrending(options = {}) {
-    const { limit = 8 } = options;
-
-    try {
-      const trends = await SearchTrend.find()
-        .sort({ count: -1, lastSearchedAt: -1 })
-        .limit(limit)
-        .select("query count lastSearchedAt")
-        .lean();
-
-      return trends;
-    } catch (error) {
-      this.logger.error('Failed to get trending searches', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get search statistics
-   * @returns {Promise<Object>} - Search statistics
-   */
-  async getSearchStats() {
-    try {
-      const totalSearches = await SearchTrend.countDocuments();
-      const recentSearches = await SearchTrend.countDocuments({
-        lastSearchedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-      });
-
-      const topTrends = await SearchTrend.find()
-        .sort({ count: -1 })
-        .limit(5)
-        .select("query count")
-        .lean();
-
-      return {
-        totalSearches,
-        recentSearches,
-        topTrends,
-        lastUpdated: new Date()
-      };
-    } catch (error) {
-      this.logger.error('Failed to get search stats', error);
-      return {
-        totalSearches: 0,
-        recentSearches: 0,
-        topTrends: [],
-        lastUpdated: new Date()
-      };
-    }
-  }
 }
 
 // Export singleton instance

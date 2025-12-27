@@ -223,27 +223,6 @@ exports.getCategoryStats = async (req, res) => {
     }
 };
 
-exports.getTrending = async (req, res) => {
-    try {
-        const { limit = 8 } = req.query;
-
-        const trends = await searchService.getTrending({ limit: parseInt(limit) });
-
-        res.json({
-            success: true,
-            data: trends,
-            message: "Trending searches retrieved successfully"
-        });
-    } catch (error) {
-        console.error("Get trending error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to get trending searches",
-            errors: [error.message]
-        });
-    }
-};
-
 exports.getSearchStats = async (req, res) => {
     try {
         const stats = await searchService.getSearchStats();

@@ -61,18 +61,6 @@ class NewsService {
     return apiService.get("/api/news/suggest", params);
   }
 
-  /**
-   * Get trending searches
-   * @param options - Options
-   * @returns Trending searches
-   */
-  async getTrending(options: any = {}) {
-    const params = {
-      limit: options.limit || 8,
-    };
-
-    return apiService.get("/api/news/trending", params);
-  }
 
   /**
    * Get news by category with pagination support
