@@ -3,11 +3,15 @@ const router = express.Router();
 const {
     searchNews,
     getLatestNews,
+    getAllLatestNews,
     suggestNews,
     getByCategory,
     getCategories,
     getCategoryStats,
-    getSearchStats
+    getSearchStats,
+    getAIProcessingStats,
+    processPendingAIContent,
+    retryFailedAIProcessing
 } = require("../controllers/news.controller");
 
 // Search news
@@ -26,5 +30,13 @@ router.get("/category/stats", getCategoryStats);
 
 // Statistics endpoints
 router.get("/stats", getSearchStats);
+
+// AI Processing Management Routes
+router.get("/ai/stats", getAIProcessingStats);
+router.post("/ai/process", processPendingAIContent);
+router.post("/ai/retry", retryFailedAIProcessing);
+
+// Admin routes (for backend management)
+router.get("/admin/latest", getAllLatestNews);
 
 module.exports = router;

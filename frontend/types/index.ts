@@ -20,6 +20,33 @@ export interface NewsItem {
   category?: string;
   tags?: string[];
   finalScore?: number;
+  
+  // 🤖 AI-Generated Content Fields
+  aiSummary?: string;
+  aiContent?: string;
+  slug?: string;
+  readingTime?: number;
+  aiStatus?: 'pending' | 'processing' | 'completed' | 'failed';
+  aiMetadata?: {
+    model?: string;
+    promptTokens?: number;
+    completionTokens?: number;
+    processingTime?: number;
+    confidence?: number;
+  };
+  priority?: number;
+  
+  // 📊 Content Analytics
+  views?: number;
+  engagement?: number;
+  
+  // 📅 Timestamps
+  updatedAt?: string;
+  aiProcessedAt?: string;
+  
+  // 📰 Original Source Data (Reference Only)
+  originalTitle?: string;
+  originalDescription?: string;
 }
 
 export interface SearchResponse {

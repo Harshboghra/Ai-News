@@ -10,7 +10,6 @@ async function trackSearch(query) {
     
     // Previously tracked search trends in database
     // Now just a placeholder to maintain API compatibility
-    console.log(`Search tracked (placeholder): ${query}`);
 }
 
 module.exports = trackSearch;

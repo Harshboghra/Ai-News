@@ -6,7 +6,6 @@ const connectDB = async () => {
 
         // For CI/CD environments, skip MongoDB connection if no URI is provided
         if (!process.env.MONGO_URI && !process.env.MONGODB_URI && process.env.NODE_ENV === 'test') {
-            console.log("Skipping MongoDB connection in test environment");
             return;
         }
 
@@ -15,14 +14,14 @@ const connectDB = async () => {
         }
 
         await mongoose.connect(mongoUri);
-        console.log("MongoDB connected successfully");
+        // connected
     } catch (err) {
-        console.error("MongoDB connection error:", err.message);
+        // connection error
 
         // In CI/CD or test environments, don't exit the process
         // Just log the error and continue (for health checks)
         if (process.env.NODE_ENV === 'test' || process.env.CI) {
-            console.log("Continuing without MongoDB connection for CI/CD testing");
+            // continue without MongoDB connection for CI/CD testing
             return;
         }
 

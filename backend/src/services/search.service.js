@@ -246,7 +246,7 @@ class SearchService extends BaseService {
   }
 
   /**
-   * Search with exact match
+   * Search with exact match (AI-processed content only)
    * @param {string} query - Search query
    * @param {string} language - Language filter
    * @param {number} limit - Result limit
@@ -254,6 +254,9 @@ class SearchService extends BaseService {
    */
   async searchWithExactMatch(query, language, limit) {
     const filter = this.buildSearchFilter(query, language, 'exact');
+    // Add AI processing filter
+    filter.aiStatus = 'completed';
+    filter.aiContent = { $exists: true, $ne: null };
     
     const rawResults = await this.findWithPagination(filter, {
       limit: limit * 2,
@@ -264,7 +267,7 @@ class SearchService extends BaseService {
   }
 
   /**
-   * Search with fuzzy match
+   * Search with fuzzy match (AI-processed content only)
    * @param {string} query - Search query
    * @param {string} language - Language filter
    * @param {number} limit - Result limit
@@ -272,6 +275,9 @@ class SearchService extends BaseService {
    */
   async searchWithFuzzyMatch(query, language, limit) {
     const filter = this.buildSearchFilter(query, language, 'fuzzy');
+    // Add AI processing filter
+    filter.aiStatus = 'completed';
+    filter.aiContent = { $exists: true, $ne: null };
     
     const rawResults = await this.findWithPagination(filter, {
       limit: limit * 3,
@@ -282,7 +288,7 @@ class SearchService extends BaseService {
   }
 
   /**
-   * Search with language-specific filtering
+   * Search with language-specific filtering (AI-processed content only)
    * @param {string} query - Search query
    * @param {string} language - Language filter
    * @param {number} limit - Result limit
@@ -290,6 +296,9 @@ class SearchService extends BaseService {
    */
   async searchWithLanguage(query, language, limit) {
     const filter = this.buildSearchFilter(query, language, 'fuzzy');
+    // Add AI processing filter
+    filter.aiStatus = 'completed';
+    filter.aiContent = { $exists: true, $ne: null };
     
     const rawResults = await this.findWithPagination(filter, {
       limit: limit * 2,
@@ -300,13 +309,16 @@ class SearchService extends BaseService {
   }
 
   /**
-   * Search with partial word matching
+   * Search with partial word matching (AI-processed content only)
    * @param {string} query - Search query
    * @param {number} limit - Result limit
    * @returns {Promise<Array>} - Search results
    */
   async searchWithPartialMatch(query, limit) {
     const filter = this.buildSearchFilter(query, null, 'partial');
+    // Add AI processing filter
+    filter.aiStatus = 'completed';
+    filter.aiContent = { $exists: true, $ne: null };
 
     const rawResults = await this.findWithPagination(filter, {
       limit: limit * 2,

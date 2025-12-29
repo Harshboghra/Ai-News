@@ -8,6 +8,10 @@ connectDB();
 
 app.use(cors());
 app.use(express.json());
+try {
+  const morgan = require("morgan");
+  app.use(morgan("combined"));
+} catch {}
 
 app.get("/health", (req, res) => {
   res.status(200).send("API is healthy");
@@ -47,15 +51,9 @@ if (require.main === module) {
   global.io = io;
 
   io.on("connection", socket => {
-    console.log("Client connected:", socket.id);
-
-    socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
-    });
+    socket.on("disconnect", () => {});
   });
 
   const PORT = process.env.PORT || 5000;
-  server.listen(PORT, () =>
-    console.log(`Server running on ${PORT}`)
-  );
+  server.listen(PORT, () => {});
 }

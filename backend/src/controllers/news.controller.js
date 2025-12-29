@@ -1,17 +1,65 @@
 const News = require("../models/News");
-const detectLanguage = require("../utils/language");
-const {
-    getRecencyScore,
-    getCategoryScore,
-    getSourceScore,
-    getExactMatchScore
-} = require("../utils/ranking");
-const trackSearch = require("../utils/trackSearch");
 const searchService = require("../services/search.service");
+const aiProcessingService = require("../services/aiProcessing.service");
 
-// 🕒 LATEST NEWS WITH PAGINATION
+// 🕒 LATEST NEWS WITH PAGINATION (AI-PROCESSED ONLY)
 exports.getLatestNews = async (req, res) => {
-    console.log("Fetching latest news with pagination");
+    // fetching latest AI-processed news
+    try {
+        const { language = "en", limit = 20, page = 1 } = req.query;
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
+
+        // Get total count for pagination (AI-processed only)
+        const totalCount = await News.countDocuments({ 
+            language,
+            aiStatus: 'completed',
+            aiContent: { $exists: true, $ne: null }
+        });
+
+        // Get paginated results (AI-processed only)
+        const news = await News.find({ 
+            language,
+            aiStatus: 'completed',
+            aiContent: { $exists: true, $ne: null }
+        })
+            .sort({ publishedAt: -1 })
+            .skip(skip)
+            .limit(limitNum);
+
+        const totalPages = Math.ceil(totalCount / limitNum);
+        const hasNext = pageNum < totalPages;
+        const hasPrev = pageNum > 1;
+
+        res.json({
+            success: true,
+            data: {
+                news,
+                pagination: {
+                    currentPage: pageNum,
+                    totalPages,
+                    totalCount,
+                    hasNext,
+                    hasPrev,
+                    limit: limitNum
+                }
+            },
+            message: "Latest AI-processed news retrieved successfully"
+        });
+    } catch (error) {
+        // error already handled by response
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch latest news",
+            errors: [error.message]
+        });
+    }
+};
+
+// 🕒 ALL LATEST NEWS (FOR ADMIN/BACKEND USE)
+exports.getAllLatestNews = async (req, res) => {
+    // fetching latest news (including unprocessed)
     try {
         const { language = "en", limit = 20, page = 1 } = req.query;
         const pageNum = parseInt(page);
@@ -44,13 +92,71 @@ exports.getLatestNews = async (req, res) => {
                     limit: limitNum
                 }
             },
-            message: "Latest news retrieved successfully"
+            message: "All latest news retrieved successfully"
         });
     } catch (error) {
-        console.error("Get latest news error:", error);
+        // error already handled by response
         res.status(500).json({
             success: false,
-            message: "Failed to fetch latest news",
+            message: "Failed to fetch all latest news",
+            errors: [error.message]
+        });
+    }
+};
+
+// 🤖 AI PROCESSING MANAGEMENT
+exports.getAIProcessingStats = async (req, res) => {
+    try {
+        const stats = await aiProcessingService.getProcessingStats();
+        
+        res.json({
+            success: true,
+            data: stats,
+            message: "AI processing statistics retrieved successfully"
+        });
+    } catch (error) {
+        // error already handled by response
+        res.status(500).json({
+            success: false,
+            message: "Failed to get AI processing statistics",
+            errors: [error.message]
+        });
+    }
+};
+
+exports.processPendingAIContent = async (req, res) => {
+    try {
+        const { limit = 10 } = req.body;
+        
+        await aiProcessingService.processPendingAIContent(limit);
+        
+        res.json({
+            success: true,
+            message: `Started AI processing for up to ${limit} pending items`
+        });
+    } catch (error) {
+        // error already handled by response
+        res.status(500).json({
+            success: false,
+            message: "Failed to start AI processing",
+            errors: [error.message]
+        });
+    }
+};
+
+exports.retryFailedAIProcessing = async (req, res) => {
+    try {
+        await aiProcessingService.retryFailedProcessing();
+        
+        res.json({
+            success: true,
+            message: "Retried failed AI processing"
+        });
+    } catch (error) {
+        // error already handled by response
+        res.status(500).json({
+            success: false,
+            message: "Failed to retry failed AI processing",
             errors: [error.message]
         });
     }
@@ -97,7 +203,7 @@ exports.searchNews = async (req, res) => {
             message: "Search completed successfully"
         });
     } catch (error) {
-        console.error("Search error:", error);
+        // error already handled by response
         res.status(500).json({
             success: false,
             message: "Search failed",
@@ -130,7 +236,7 @@ exports.suggestNews = async (req, res) => {
             message: "Suggestions retrieved successfully"
         });
     } catch (error) {
-        console.error("Get suggestions error:", error);
+        // error already handled by response
         res.status(500).json({
             success: false,
             message: "Failed to get suggestions",
@@ -164,7 +270,7 @@ exports.getByCategory = async (req, res) => {
             message: "Category news retrieved successfully"
         });
     } catch (error) {
-        console.error("Get by category error:", error);
+        // error already handled by response
         res.status(500).json({
             success: false,
             message: "Failed to get category news",
@@ -185,7 +291,7 @@ exports.getCategories = async (req, res) => {
             message: "Categories retrieved successfully"
         });
     } catch (error) {
-        console.error("Get categories error:", error);
+        // error already handled by response
         res.status(500).json({
             success: false,
             message: "Failed to get categories",
@@ -214,7 +320,7 @@ exports.getCategoryStats = async (req, res) => {
             message: "Category statistics retrieved successfully"
         });
     } catch (error) {
-        console.error("Get category stats error:", error);
+        // error already handled by response
         res.status(500).json({
             success: false,
             message: "Failed to get category statistics",
@@ -233,7 +339,7 @@ exports.getSearchStats = async (req, res) => {
             message: "Search statistics retrieved successfully"
         });
     } catch (error) {
-        console.error("Get search stats error:", error);
+        // error already handled by response
         res.status(500).json({
             success: false,
             message: "Failed to get search statistics",
@@ -243,44 +349,3 @@ exports.getSearchStats = async (req, res) => {
 };
 
 
-async function searchWithLanguage(query, language) {
-    try {
-        // Use full-text search instead of prefix matching
-        const regex = new RegExp(query, "i");
-        const raw = await News.find(
-            {
-                language,
-                $or: [
-                    { title: regex },
-                    { tags: regex },
-                    { description: regex }
-                ]
-            },
-            {
-                title: 1,
-                source: 1,
-                publishedAt: 1,
-                description: 1
-            }
-        ).limit(50);
-
-        return raw
-            .map(item => {
-                const finalScore =
-                    (item.score || 0) * 5 +
-                    getRecencyScore(item.publishedAt) +
-                    getCategoryScore(query, item.category) +
-                    getSourceScore(item.source) +
-                    getExactMatchScore(query, item.title);
-
-                return {
-                    ...item.toObject(),
-                    finalScore
-                };
-            })
-            .sort((a, b) => b.finalScore - a.finalScore);
-    } catch (err) {
-        console.error("Search error:", err.message);
-        return [];
-    }
-}

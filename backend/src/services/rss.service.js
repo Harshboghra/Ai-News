@@ -7,6 +7,7 @@ const Parser = require("rss-parser");
 const BaseService = require("./base.service");
 const News = require("../models/News");
 const rssSources = require("../utils/rssSources");
+const aiProcessingService = require("./aiProcessing.service");
 
 class RSSService extends BaseService {
   constructor() {
@@ -60,16 +61,30 @@ class RSSService extends BaseService {
   async processFeed(feed) {
     this.logger.debug(`Processing feed: ${feed.url}`);
 
-    const data = await this.parser.parseURL(feed.url);
-    this.logger.debug(`Feed processed: ${feed.url}`, { itemCount: data.items.length });
+    try {
+      const data = await this.parser.parseURL(feed.url);
+      this.logger.debug(`Feed processed: ${feed.url}`, { itemCount: data.items.length });
 
-    for (const item of data.items) {
-      if (!item.link) {
-        this.logger.warn(`Skipping item without link: ${item.title}`);
-        continue;
+      for (const item of data.items) {
+        if (!item.link) {
+          this.logger.warn(`Skipping item without link: ${item.title}`);
+          continue;
+        }
+
+        await this.processFeedItem(item, feed);
       }
-
-      await this.processFeedItem(item, feed);
+    } catch (error) {
+      // Handle XML parsing errors specifically
+      if (error.message && error.message.includes('Invalid character in entity name')) {
+        this.logger.warn(`XML parsing error for feed: ${feed.url}. Skipping this feed.`);
+        this.processingStats.errors.push({
+          feed: feed.url,
+          error: 'XML parsing error - malformed feed content'
+        });
+      } else {
+        // Re-throw other errors to be handled by the caller
+        throw error;
+      }
     }
   }
 
@@ -141,10 +156,26 @@ class RSSService extends BaseService {
       if (newNews) {
         this.processingStats.totalInserted++;
         
+        // Set initial AI processing status
+        await this.model.findByIdAndUpdate(newNews._id, {
+          aiStatus: 'pending',
+          priority: feed.priority || 1,
+          originalTitle: item.title,
+          originalDescription: item.contentSnippet || ""
+        });
+
         // Emit socket event if global.io is available
         if (global.io) {
           global.io.emit("news:new", newNews);
           this.logger.debug('Emitted news:new event', { title: newNews.title });
+        }
+
+        // Trigger immediate AI processing for high-priority items
+        if ((feed.priority || 1) >= 0.9) {
+          this.logger.debug('Triggering immediate AI processing for high-priority item');
+          setTimeout(() => {
+            aiProcessingService.processSingleNews(newNews);
+          }, 1000); // Small delay to ensure database is updated
         }
 
       }
